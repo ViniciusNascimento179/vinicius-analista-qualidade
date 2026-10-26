@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vinicius Analista Qualidade — Dashboard Integrado da Qualidade</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f1f5f9; --card: #ffffff; --ink: #0f172a; --muted: #64748b;
+    --ok: #16a34a; --bad: #dc2626; --warn: #d97706; --info: #2563eb; --line: #e2e8f0;
+    --brand: #1e3a5f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--ink); padding: 24px; }
+  header { margin-bottom: 16px; }
+  h1 { font-size: 1.5rem; color: var(--brand); }
+  header p { color: var(--muted); font-size: .9rem; margin-top: 4px; }
+
+  .abas { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; border-bottom: 2px solid var(--line); padding-bottom: 0; }
+  .abas button {
+    padding: 10px 16px; border: none; background: transparent; color: var(--muted);
+    font-size: .92rem; font-weight: 600; cursor: pointer; border-radius: 10px 10px 0 0;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+  }
+  .abas button:hover { color: var(--brand); background: #e8eef5; }
+  .abas button.ativa { color: var(--brand); border-bottom-color: var(--brand); background: #e8eef5; }
+
+  .aba { display: none; }
+  .aba.ativa { display: block; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .kpi .rotulo { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .kpi .valor { font-size: 1.9rem; font-weight: 700; margin-top: 4px; }
+  .kpi .detalhe { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+  .kpi.ok .valor { color: var(--ok); }
+  .kpi.bad .valor { color: var(--bad); }
+  .kpi.warn .valor { color: var(--warn); }
+  .kpi.info .valor { color: var(--info); }
+
+  .grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 14px; margin-bottom: 14px; }
+  .painel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .painel h2 { font-size: 1rem; margin-bottom: 12px; color: var(--brand); }
+  .painel.full { grid-column: 1 / -1; }
+  .canvas-wrap { position: relative; height: 280px; }
+  .canvas-wrap.alto { height: 380px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  th { text-align: left; padding: 8px 10px; background: #f8fafc; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); position: sticky; top: 0; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.apont { max-width: 420px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .72rem; font-weight: 600; white-space: nowrap; }
+  .badge.ok { background: #dcfce7; color: var(--ok); }
+  .badge.bad { background: #fee2e2; color: var(--bad); }
+  .badge.warn { background: #fef3c7; color: var(--warn); }
+  .badge.info { background: #dbeafe; color: var(--info); }
+  .badge.mut { background: #f1f5f9; color: var(--muted); }
+
+  .atalhos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 14px; }
+  .atalho { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; cursor: pointer; transition: box-shadow .15s, transform .15s; }
+  .atalho:hover { box-shadow: 0 4px 14px rgba(30,58,95,.12); transform: translateY(-2px); }
+  .atalho .icone { font-size: 1.6rem; }
+  .atalho .nome { font-weight: 700; color: var(--brand); margin: 6px 0 4px; }
+  .atalho .desc { font-size: .82rem; color: var(--muted); }
+
+  .aviso { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 10px; padding: 12px 16px; font-size: .85rem; margin-bottom: 14px; }
+  .vazio { text-align: center; color: var(--muted); padding: 40px; }
+  footer { color: var(--muted); font-size: .8rem; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Vinicius Analista Qualidade</h1>
+  <p>Dashboard Integrado da Qualidade — Hospital Vera Cruz · atualizado em <span id="gerado">—</span></p>
+</header>
+
+<nav class="abas" id="abas">
+  <button data-aba="visao" class="ativa">🏠 Visão Geral</button>
+  <button data-aba="inspecoes">🔍 Inspeções</button>
+  <button data-aba="rounds">🔄 Rounds</button>
+  <button data-aba="huddle">📢 Huddle</button>
+  <button data-aba="watcher">🛏️ Watcher</button>
+  <button data-aba="jci">📋 JCI + Comitês</button>
+</nav>
+
+<main>
+  <section id="aba-visao" class="aba ativa"></section>
+  <section id="aba-inspecoes" class="aba"></section>
+  <section id="aba-rounds" class="aba"></section>
+  <section id="aba-huddle" class="aba"></section>
+  <section id="aba-watcher" class="aba"></section>
+  <section id="aba-jci" class="aba"></section>
+</main>
+
+<footer>
+  Fonte: Planos de Ação da Qualidade (Power BI) · Pipeline Python/pandas · Publicado via GitHub Pages
+</footer>
+
+<script src="data.js"></script>
+<script>
+/* ============================== utilidades ============================== */
+const fmt = n => Number(n).toLocaleString('pt-BR');
+const pct = n => fmt(n) + '%';
+const PALETA = ['#2563eb','#16a34a','#d97706','#dc2626','#7c3aed','#0891b2','#be185d','#65a30d','#c2410c','#4f46e5','#0d9488','#b45309'];
+const PALETA_OK = ['#16a34a','#dc2626','#d97706','#64748b','#2563eb','#7c3aed'];
+
+function cor(i){ return PALETA[i % PALETA.length]; }
+
+function novoGrafico(id, tipo, labels, datasets, opts = {}){
+  const ctx = document.getElementById(id);
+  if (!ctx) return null;
+  return new Chart(ctx, {
+    type: tipo,
+    data: { labels, datasets },
+    options: Object.assign({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: datasets.length > 1 || tipo === 'pie' || tipo === 'doughnut' } }
+    }, opts)
+  });
+}
+
+function dsRotulo(label, valores, cores){
+  return { label, data: valores, backgroundColor: cores, borderRadius: 6 };
+}
+
+function badgeClasse(txt){
+  const t = (txt || '').toLowerCase();
+  if (t.includes('conclu') || t.includes('no prazo') || t.includes('dentro')) return 'ok';
+  if (t.includes('atras') || t.includes('não conforme') || t.includes('nao conforme') || t.includes('óbito') || t.includes('obito')) return 'bad';
+  if (t.includes('andamento') || t.includes('pendente') || t.includes('vence')) return 'warn';
+  if (t.includes('iniciado') || t.includes('em dia')) return 'info';
+  return 'mut';
+}
+
+/* ============================== navegação ============================== */
+const RENDER = {};
+const renderizado = {};
+
+document.getElementById('abas').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-aba]');
+  if (!btn) return;
+  const aba = btn.dataset.aba;
+  document.querySelectorAll('#abas button').forEach(b => b.classList.toggle('ativa', b === btn));
+  document.querySelectorAll('.aba').forEach(s => s.classList.toggle('ativa', s.id === 'aba-' + aba));
+  if (!renderizado[aba] && RENDER[aba]) { RENDER[aba](); renderizado[aba] = true; }
+});
+
+function irPara(aba){
+  document.querySelector(`#abas button[data-aba="${aba}"]`).click();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (history.replaceState) history.replaceState(null, '', '#' + aba);
+}
+
+/* ============================== 1. visão geral ============================== */
+RENDER.visao = function(){
+  const I = DADOS.inspecoes, R = DADOS.rounds, H = DADOS.huddle, W = DADOS.watcher, J = DADOS.jci;
+
+  const sumEvo = R.evolucao.reduce((a,m) => ({r: a.r + m.realizados, p: a.p + m.previstos}), {r:0,p:0});
+  const pctRounds = sumEvo.p ? Math.round(sumEvo.r / sumEvo.p * 100) : 0;
+  const conclHuddle = (H.planos_status['Concluído'] || 0);
+  const pctHuddle = Math.round(conclHuddle / H.planos_total * 100);
+  const conf = (J.classes['Conforme'] || 0), nc = (J.classes['Não Conforme'] || 0);
+  const pctJci = (conf + nc) ? Math.round(conf / (conf + nc) * 100) : 0;
+  const obitos = W.desfechos['Óbito'] || 0;
+
+  const sec = document.getElementById('aba-visao');
+  sec.innerHTML = `
+    <div class="kpis">
+      <div class="kpi bad"><div class="rotulo">Ações de inspeção</div><div class="valor">${fmt(I.total)}</div><div class="detalhe">${fmt(I.situacao_prazo.atrasada || 0)} atrasadas</div></div>
+      <div class="kpi info"><div class="rotulo">Rounds 2026</div><div class="valor">${pctRounds}%</div><div class="detalhe">${fmt(sumEvo.r)} de ${fmt(sumEvo.p)} realizados</div></div>
+      <div class="kpi warn"><div class="rotulo">Planos Huddle</div><div class="valor">${fmt(H.planos_total)}</div><div class="detalhe">${pctHuddle}% concluídos · ${fmt(H.follow_total)} follow-ups</div></div>
+      <div class="kpi"><div class="rotulo">Pacientes Watcher</div><div class="valor">${fmt(W.total)}</div><div class="detalhe">${fmt(obitos)} óbitos · perm. média ${W.permanencia_media ?? '—'} dias</div></div>
+      <div class="kpi ${pctJci >= 70 ? 'ok' : 'bad'}"><div class="rotulo">Conformidade JCI</div><div class="valor">${pctJci}%</div><div class="detalhe">${fmt(nc)} não conformes</div></div>
+      <div class="kpi info"><div class="rotulo">Planos de comitês</div><div class="valor">${fmt(J.comites_total)}</div><div class="detalhe">${fmt(J.comites_status['Em Andamento'] || 0)} em andamento</div></div>
+    </div>
+
+    <div class="atalhos">
+      <div class="atalho" onclick="irPara('inspecoes')"><div class="icone">🔍</div><div class="nome">Inspeções</div><div class="desc">GUT, prioridades, setores e prazos das ações</div></div>
+      <div class="atalho" onclick="irPara('rounds')"><div class="icone">🔄</div><div class="nome">Rounds</div><div class="desc">Realização por setor e interações por categoria</div></div>
+      <div class="atalho" onclick="irPara('huddle')"><div class="icone">📢</div><div class="nome">Huddle</div><div class="desc">Planos de ação e follow-up de problemas</div></div>
+      <div class="atalho" onclick="irPara('watcher')"><div class="icone">🛏️</div><div class="nome">Watcher</div><div class="desc">Pacientes vigilados — dados anonimizados</div></div>
+      <div class="atalho" onclick="irPara('jci')"><div class="icone">📋</div><div class="nome">JCI + Comitês</div><div class="desc">Conformidade por capítulo e planos de comitê</div></div>
+    </div>
+
+    <div class="grade">
+      <div class="painel full"><h2>Panorama de registros por fonte</h2><div class="canvas-wrap"><canvas id="g-fontes"></canvas></div></div>
+      <div class="painel"><h2>Situação das ações de inspeção</h2><div class="canvas-wrap"><canvas id="g-vis-situacao"></canvas></div></div>
+      <div class="painel"><h2>Conformidade JCI — visão geral</h2><div class="canvas-wrap"><canvas id="g-vis-jci"></canvas></div></div>
+    </div>`;
+
+  novoGrafico('g-fontes', 'bar',
+    ['Ações de inspeção', 'Registros de rounds', 'Interações de round', 'Planos huddle', 'Follow-ups huddle', 'Pacientes watcher', 'Elementos JCI'],
+    [dsRotulo('Registros', [I.total, R.total_registros, R.total_interacoes, H.planos_total, H.follow_total, W.total, J.total_elementos],
+      [cor(0),cor(1),cor(2),cor(3),cor(4),cor(5),cor(6)])],
+    { indexAxis: 'y', plugins: { legend: { display: false } } });
+
+  const sitLabels = { concluida: 'Concluídas', atrasada: 'Atrasadas', vence_7d: 'Vencem em 7 dias', no_prazo: 'No prazo', sem_prazo: 'Sem prazo' };
+  const sitKeys = Object.keys(sitLabels).filter(k => I.situacao_prazo[k]);
+  novoGrafico('g-vis-situacao', 'doughnut',
+    sitKeys.map(k => sitLabels[k]),
+    [{ data: sitKeys.map(k => I.situacao_prazo[k]),
+       backgroundColor: sitKeys.map(k => ({concluida:'#16a34a',atrasada:'#dc2626',vence_7d:'#d97706',no_prazo:'#2563eb',sem_prazo:'#94a3b8'}[k])) }]);
+
+  novoGrafico('g-vis-jci', 'doughnut',
+    ['Conforme', 'Não Conforme', 'Não se aplica', 'Não avaliado'],
+    [{ data: [conf, nc, J.classes['Não se aplica'] || 0, J.classes['Não avaliado'] || 0],
+       backgroundColor: ['#16a34a','#dc2626','#94a3b8','#d97706'] }]);
+};
+
+/* ============================== 2. inspeções ============================== */
+RENDER.inspecoes = function(){
+  const I = DADOS.inspecoes;
+  const sec = document.getElementById('aba-inspecoes');
+  sec.innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><div class="rotulo">Total de ações</div><div class="valor">${fmt(I.total)}</div></div>
+      <div class="kpi ok"><div class="rotulo">Concluídas</div><div class="valor">${fmt(I.situacao_prazo.concluida || 0)}</div></div>
+      <div class="kpi bad"><div class="rotulo">Atrasadas</div><div class="valor">${fmt(I.situacao_prazo.atrasada || 0)}</div></div>
+      <div class="kpi warn"><div class="rotulo">Sem prazo definido</div><div class="valor">${fmt(I.situacao_prazo.sem_prazo || 0)}</div></div>
+    </div>
+    <div class="grade">
+      <div class="painel"><h2>Por status</h2><div class="canvas-wrap"><canvas id="g-ins-status"></canvas></div></div>
+      <div class="painel"><h2>Por prioridade GUT</h2><div class="canvas-wrap"><canvas id="g-ins-prior"></canvas></div></div>
+      <div class="painel"><h2>Setores responsáveis (top 10)</h2><div class="canvas-wrap"><canvas id="g-ins-resp"></canvas></div></div>
+      <div class="painel"><h2>Setores de origem (top 10)</h2><div class="canvas-wrap"><canvas id="g-ins-origem"></canvas></div></div>
+      <div class="painel full"><h2>Evolução mensal de registros</h2><div class="canvas-wrap"><canvas id="g-ins-evol"></canvas></div></div>
+      <div class="painel full"><h2>Categorias FMS</h2><div class="canvas-wrap"><canvas id="g-ins-cat"></canvas></div></div>
+      <div class="painel full"><h2>Ações de prioridade alta</h2>
+        <div style="max-height:420px; overflow:auto;">
+          <table>
+            <thead><tr><th>Data</th><th>Setor</th><th>Apontamento</th><th>Responsável</th><th>Prioridade</th><th>Status</th></tr></thead>
+            <tbody>
+              ${I.prioridade_alta.map(a => `
+                <tr>
+                  <td>${a.data}</td><td>${a.setor}</td><td class="apont">${a.apontamento}</td>
+                  <td>${a.responsavel}</td><td><span class="badge bad">${a.prioridade}</span></td>
+                  <td><span class="badge ${badgeClasse(a.status)}">${a.status}</span></td>
+                </tr>`).join('') || '<tr><td colspan="6" class="vazio">Nenhuma ação de prioridade alta</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+
+  novoGrafico('g-ins-status', 'doughnut', Object.keys(I.status),
+    [{ data: Object.values(I.status), backgroundColor: Object.keys(I.status).map((_,i) => cor(i)) }]);
+
+  novoGrafico('g-ins-prior', 'bar', Object.keys(I.prioridade),
+    [dsRotulo('Ações', Object.values(I.prioridade), Object.keys(I.prioridade).map((_,i) => cor(i)))],
+    { plugins: { legend: { display: false } } });
+
+  const respTop = Object.entries(I.setor_responsavel).sort((a,b) => b[1]-a[1]).slice(0,10).reverse();
+  novoGrafico('g-ins-resp', 'bar', respTop.map(e => e[0]),
+    [dsRotulo('Ações', respTop.map(e => e[1]), '#2563eb')],
+    { indexAxis: 'y', plugins: { legend: { display: false } } });
+
+  const origTop = Object.entries(I.setor_origem).sort((a,b) => b[1]-a[1]).slice(0,10).reverse();
+  novoGrafico('g-ins-origem', 'bar', origTop.map(e => e[0]),
+    [dsRotulo('Ações', origTop.map(e => e[1]), '#0891b2')],
+    { indexAxis: 'y', plugins: { legend: { display: false } } });
+
+  novoGrafico('g-ins-evol', 'line', I.evolucao.map(e => e.mes),
+    [{ label: 'Ações registradas', data: I.evolucao.map(e => e.total), borderColor: '#1e3a5f',
+       backgroundColor: 'rgba(30,58,95,.12)', fill: true, tension: .3 }]);
+
+  const catTop = Object.entries(I.categoria).sort((a,b) => b[1]-a[1]).slice(0,12).reverse();
+  novoGrafico('g-ins-cat', 'bar', catTop.map(e => e[0]),
+    [dsRotulo('Ações', catTop.map(e => e[1]), '#7c3aed')],
+    { indexAxis: 'y', plugins: { legend: { display: false } } });
+};
+
+/* ============================== 3. rounds ============================== */
+RENDER.rounds = function(){
+  const R = DADOS.rounds;
+  const sumEvo = R.evolucao.reduce((a,m) => ({r: a.r + m.realizados, p: a.p + m.previstos, d: a.d + m.pendentes}), {r:0,p:0,d:0});
+  const pctGeral = sumEvo.p ? Math.round(sumEvo.r / sumEvo.p * 100) : 0;
+
+  const sec = document.getElementById('aba-rounds');
+  sec.innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><div class="rotulo">Rounds realizados</div><div class="valor">${fmt(sumEvo.r)}</div><div class="detalhe">de ${fmt(sumEvo.p)} previstos</div></div>
+      <div class="kpi ${pctGeral >= 80 ? 'ok' : 'warn'}"><div class="rotulo">% de realização</div><div class="valor">${pctGeral}%</div></div>
+      <div class="kpi bad"><div class="rotulo">Pendentes</div><div class="valor">${fmt(sumEvo.d)}</div></div>
+      <div class="kpi info"><div class="rotulo">Interações registradas</div><div class="valor">${fmt(R.total_interacoes)}</div><div class="detalhe">em ${R.setores_interacoes.length} setores</div></div>
+    </div>
+    <div class="grade">
+      <div class="painel full"><h2>Rounds realizados x previstos por mês (2026)</h2><div class="canvas-wrap"><canvas id="g-rd-evol"></canvas></div></div>
+      <div class="painel"><h2>% de realização por setor</h2><div class="canvas-wrap alto"><canvas id="g-rd-setores"></canvas></div></div>
+      <div class="painel"><h2>Interações por categoria</h2><div class="canvas-wrap"><canvas id="g-rd-cats"></canvas></div></div>
+      <div class="painel full"><h2>Interações por mês (top categorias)</h2><div class="canvas-wrap"><canvas id="g-rd-mes"></canvas></div></div>
+      <div class="painel"><h2>Interações por setor</h2><div class="canvas-wrap alto"><canvas id="g-rd-int-setor"></canvas></div></div>
+      <div class="painel full"><h2>Desempenho por responsável</h2>
+        <div style="max-height:380px; overflow:auto;">
+          <table>
+            <thead><tr><th>Responsáveis</th><th>Realizados</th><th>Previstos</th><th>% realização</th></tr></thead>
+            <tbody>
+              ${R.responsaveis.map(r => `
+                <tr><td>${r.responsavel}</td><td>${fmt(r.realizados)}</td><td>${fmt(r.previstos)}</td>
+                <td><span class="badge ${r.pct >= 80 ? 'ok' : r.pct >= 50 ? 'warn' : 'bad'}">${pct(r.pct)}</span></td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+
+  novoGrafico('g-rd-evol', 'bar', R.evolucao.map(e => e.mes), [
+    { label: 'Realizados', data: R.evolucao.map(e => e.realizados), backgroundColor: '#16a34a', borderRadius: 6 },
+    { label: 'Previstos', data: R.evolucao.map(e => e.previstos), backgroundColor: '#94a3b8', borderRadius: 6 },
+    { label: 'Pendentes', data: R.evolucao.map(e => e.pendentes), backgroundColor: '#dc2626', borderRadius: 6 }
+  ]);
+
+  const set = [...R.setores].sort((a,b) => a.pct - b.pct);
+  novoGrafico('g-rd-setores', 'bar', set.map(s => s.setor),
+    [{ label: '% realizado', data: set.map(s => s.pct),
+       backgroundColor: set.map(s => s.pct >= 80 ? '#16a34a' : s.pct >= 50 ? '#d97706' : '#dc2626') }],
+    { indexAxis: 'y', plugins: { legend: { display: false } } });
+
+  novoGrafico('g-rd-cats', 'doughnut', R.categorias.map(c => c.categoria),
+    [{ data: R.categorias.map(c => c.total), backgroundColor: R.categorias.map((_,i) => cor(i)) }]);
+
+  novoGrafico('g-rd-mes', 'line', R.interacoes_mes.meses,
+    R.interacoes_mes.series.map((s,i) => ({ label: s.categoria, data: s.valores, borderColor: cor(i), tension: .3 })));
+
+  const si = [...R.setores_interacoes].sort((a,b) => a.total - b.total).slice(-15);
+  novoGrafico('g-rd-int-setor', 'bar', si.map(s => s.setor),
+    [dsRotulo('Interações', si.map(s => s.total), '#0891b2')],
+    { indexAxis: 'y', plugins: { legend: { display: false } } });
+};
+
+/* ============================== 4. huddle ============================== */
+RENDER.huddle = function(){
+  const H = DADOS.huddle;
+  const concl = (H.planos_status['Concluído'] || 0);
+  const pctConcl = Math.round(concl / H.planos_total * 100);
+  const fConcl = (H.follow_status['Concluído'] || 0);
+  const pctF = Math.round(fConcl / H.follow_total * 100);
+
+  const sec = document.getElementById('aba-huddle');
+  sec.innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><div class="rotulo">Planos de ação</div><div class="valor">${fmt(H.planos_total)}</div><div class="detalhe">2024 – 2026</div></div>
+      <div class="kpi ok"><div class="rotulo">Planos concluídos</div><div class="valor">${pctConcl}%</div><div class="detalhe">${fmt(concl)} de ${fmt(H.planos_total)}</div></div>
+      <div class="kpi info"><div class="rotulo">Follow-ups</div><div class="valor">${fmt(H.follow_total)}</div></div>
+      <div class="kpi warn"><div class="rotulo">Follow-ups concluídos</div><div class="valor">${pctF}%</div><div class="detalhe">${fmt(fConcl)} de ${fmt(H.follow_total)}</div></div>
+    </div>
+    <div class="grade">
+      <div class="painel"><h2>Planos por status</h2><div class="canvas-wrap"><canvas id="g-hd-status"></canvas></div></div>
+      <div class="painel"><h2>Planos por área</h2><div class="canvas-wrap"><canvas id="g-hd-area"></canvas></div></div>
+      <div class="painel full"><h2>Evolução anual dos planos</h2><div class="canvas-wrap"><canvas id="g-hd-evol"></canvas></div></div>
+      <div class="painel"><h2>Planos por categoria (top 12)</h2><div class="canvas-wrap alto"><canvas id="g-hd-cat"></canvas></div></div>
+      <div class="painel"><h2>Follow-up por status</h2><div class="canvas-wrap"><canvas id="g-hd-fstatus"></canvas></div></div>
+      <div class="painel"><h2>Follow-up por área (top 15)</h2><div class="canvas-wrap alto"><canvas id="g-hd-farea"></canvas></div></div>
+      <div class="painel full"><h2>Follow-up por categoria (top 12)</h2><div class="canvas-wrap"><canvas id="g-hd-fcat"></canvas></div></div>
+    </div>`;
+
+  novoGrafico('g-hd-status', 'doughnut', Object.keys(H.planos_status),
+    [{ data: Object.values(H.planos_status), backgroundColor: Object.keys(H.planos_status).map((_,i) => cor(i)) }]);
+
+  const areaTop = Object.entries(H.planos_area).sort((a,b) => b[1]-a[1]).slice(0,12).reverse();
+  novoGrafico('g-hd-area', 'bar', areaTop.map(e => e[0]),
+    [dsRotulo('Planos', areaTop.map(e => e[1]), '#2563eb')],
+    { indexAxis: 'y', plugins: { legend: { display: false } } });
+
+  novoGrafico('g-hd-evol', 'bar', H.planos_evolucao.map(e => e.ano), [
+    { label: 'Total', data: H.planos_evolucao.map(e => e.total), backgroundColor: '#94a3b8', borderRadius: 6 },
+    { label: 'Concluídos', data: H.planos_evolucao.map(e => e.concluido), backgroundColor: '#16a34a', borderRadius: 6 }
+  ]);
+
+  const catTop = Object.entries(H.planos_categoria).sort((a,b) => b[1]-a[1]).slice(0,12).reverse();
+  novoGrafico('g-hd-cat', 'bar', catTop.map(e => e[0]),
+    [dsRotulo('Planos', catTop.map(e => e[1]), '#7c3aed')],
+    { indexAxis: 'y', plugins: { legend: { display: false } } });
+
+  novoGrafico('g-hd-fstatus', 'doughnut', Object.keys(H.follow_status),
+    [{ data: Object.values(H.follow_status), backgroundColor: Object.keys(H.follow_status).map((_,i) => cor(i)) }]);
+
+  const fArea = Object.entries(H.follow_area).sort((a,b) => b[1]-a[1]).slice(0,15).reverse();
+  novoGrafico('g-hd-farea', 'bar', fArea.map(e => e[0]),
+    [dsRotulo('Follow-ups', fArea.map(e => e[1]), '#0891b2')],
+    { indexAxis: 'y', plugins: { legend: { display: false } } });
+
+  const fCat = Object.entries(H.follow_categoria).sort((a,b) => b[1]-a[1]).slice(0,12).reverse();
+  novoGrafico('g-hd-fcat', 'bar', fCat.map(e => e[0]),
+    [dsRotulo('Follow-ups', fCat.map(e => e[1]), '#be185d')],
+    { indexAxis: 'y', plugins: { legend: { display: false } } });
+};
+
+/* ============================== 5. watcher ============================== */
+RENDER.watcher = function(){
+  const W = DADOS.watcher;
+  const obitos = W.desfechos['Óbito'] || 0;
+  const altas = W.desfechos['Alta'] || 0;
+
+  const sec = document.getElementById('aba-watcher');
+  sec.innerHTML = `
+    <div class="aviso">🔒 <strong>Dados anonimizados:</strong> prontuário, nome e data de nascimento são removidos no processamento. Este painel mostra apenas dados agregados.</div>
+    <div class="kpis">
+      <div class="kpi"><div class="rotulo">Pacientes vigilados</div><div class="valor">${fmt(W.total)}</div><div class="detalhe">2024 – 2026</div></div>
+      <div class="kpi ok"><div class="rotulo">Alta</div><div class="valor">${fmt(altas)}</div><div class="detalhe">${Math.round(altas/W.total*100)}% dos casos</div></div>
+      <div class="kpi bad"><div class="rotulo">Óbitos</div><div class="valor">${fmt(obitos)}</div><div class="detalhe">${Math.round(obitos/W.total*100)}% dos casos</div></div>
+      <div class="kpi info"><div class="rotulo">Permanência média</div><div class="valor">${W.permanencia_media ?? '—'}</div><div class="detalhe">dias (vigilância)</div></div>
+    </div>
+    <div class="grade">
+      <div class="painel"><h2>Desfechos</h2><div class="canvas-wrap"><canvas id="g-w-desf"></canvas></div></div>
+      <div class="painel"><h2>Motivos de vigilância (top 12)</h2><div class="canvas-wrap alto"><canvas id="g-w-mot"></canvas></div></div>
+      <div class="painel"><h2>Por ano</h2><div class="canvas-wrap"><canvas id="g-w-ano"></canvas></div></div>
+      <div class="painel"><h2>Tempo de vigilância</h2><div class="canvas-wrap"><canvas id="g-w-perm"></canvas></div></div>
+      <div class="painel full"><h2>Última evolução clínica</h2><div class="canvas-wrap"><canvas id="g-w-evol"></canvas></div></div>
+    </div>`;
+
+  novoGrafico('g-w-desf', 'doughnut', Object.keys(W.desfechos),
+    [{ data: Object.values(W.desfechos), backgroundColor: Object.keys(W.desfechos).map(k => ({'Alta':'#16a34a','Óbito':'#dc2626'}[k] || cor(3))) }]);
+
+  const mot = Object.entries(W.motivos).sort((a,b) => b[1]-a[1]).slice(0,12).reverse();
+  novoGrafico('g-w-mot', 'bar', mot.map(e => e[0]),
+    [dsRotulo('Pacientes', mot.map(e => e[1]), '#dc2626')],
+    { indexAxis: 'y', plugins: { legend: { display: false } } });
+
+  novoGrafico('g-w-ano', 'bar', W.evolucao.map(e => e.ano),
+    [dsRotulo('Pacientes', W.evolucao.map(e => e.total), '#2563eb')],
+    { plugins: { legend: { display: false } } });
+
+  const ordem = Object.keys(W.permanencia_faixas);
+  novoGrafico('g-w-perm', 'bar', ordem,
+    [dsRotulo('Pacientes', ordem.map(k => W.permanencia_faixas[k]), '#0891b2')],
+    { plugins: { legend: { display: false } } });
+
+  const ev = Object.entries(W.evolucao_clinica).sort((a,b) => b[1]-a[1]);
+  novoGrafico('g-w-evol', 'bar', ev.map(e => e[0]),
+    [dsRotulo('Pacientes', ev.map(e => e[1]), ev.map(e => ({'Estável':'#16a34a','Crítico':'#dc2626','Paliativo':'#7c3aed'}[e[0]] || '#94a3b8')))],
+    { plugins: { legend: { display: false } } });
+};
+
+/* ============================== 6. jci + comitês ============================== */
+RENDER.jci = function(){
+  const J = DADOS.jci;
+  const conf = (J.classes['Conforme'] || 0), nc = (J.classes['Não Conforme'] || 0);
+  const pctJci = (conf + nc) ? Math.round(conf / (conf + nc) * 100) : 0;
+  const piores = [...J.capitulos].sort((a,b) => a.pct_conformidade - b.pct_conformidade).slice(0,5);
+
+  const sec = document.getElementById('aba-jci');
+  sec.innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><div class="rotulo">Elementos avaliados</div><div class="valor">${fmt(J.total_elementos)}</div><div class="detalhe">${J.capitulos.length} capítulos JCI</div></div>
+      <div class="kpi ${pctJci >= 70 ? 'ok' : 'bad'}"><div class="rotulo">Conformidade geral</div><div class="valor">${pctJci}%</div><div class="detalhe">${fmt(conf)} conformes</div></div>
+      <div class="kpi bad"><div class="rotulo">Não conformes</div><div class="valor">${fmt(nc)}</div><div class="detalhe">pior: ${piores[0] ? piores[0].capitulo : '—'}</div></div>
+      <div class="kpi info"><div class="rotulo">Planos de comitês</div><div class="valor">${fmt(J.comites_total)}</div><div class="detalhe">${fmt(J.comites_status['Em Andamento'] || 0)} em andamento</div></div>
+    </div>
+    <div class="grade">
+      <div class="painel full"><h2>Conformidade por capítulo JCI (%)</h2><div class="canvas-wrap alto"><canvas id="g-jci-cap"></canvas></div></div>
+      <div class="painel"><h2>Classificação geral</h2><div class="canvas-wrap"><canvas id="g-jci-classes"></canvas></div></div>
+      <div class="painel"><h2>Não conformes por capítulo</h2><div class="canvas-wrap"><canvas id="g-jci-nc"></canvas></div></div>
+      <div class="painel"><h2>Planos por comitê de origem</h2><div class="canvas-wrap"><canvas id="g-jci-origem"></canvas></div></div>
+      <div class="painel"><h2>Planos por status</h2><div class="canvas-wrap"><canvas id="g-jci-status"></canvas></div></div>
+      <div class="painel full"><h2>Planos de ação dos comitês</h2>
+        <div style="max-height:460px; overflow:auto;">
+          <table>
+            <thead><tr><th>ID</th><th>Comitê</th><th>Data</th><th>Plano de ação</th><th>Responsáveis</th><th>Prazo</th><th>Status</th></tr></thead>
+            <tbody>
+              ${J.comites_lista.map(c => `
+                <tr>
+                  <td>${c.id}</td><td><span class="badge info">${c.comite}</span></td><td>${c.data}</td>
+                  <td class="apont">${c.plano}</td><td>${c.responsaveis}</td><td>${c.prazo}</td>
+                  <td><span class="badge ${badgeClasse(c.status)}">${c.status}</span></td>
+                </tr>`).join('') || '<tr><td colspan="7" class="vazio">Nenhum plano registrado</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+
+  const caps = [...J.capitulos].sort((a,b) => b.pct_conformidade - a.pct_conformidade);
+  novoGrafico('g-jci-cap', 'bar', caps.map(c => c.capitulo),
+    [{ label: '% conformidade', data: caps.map(c => c.pct_conformidade),
+       backgroundColor: caps.map(c => c.pct_conformidade >= 80 ? '#16a34a' : c.pct_conformidade >= 60 ? '#d97706' : '#dc2626') }],
+    { indexAxis: 'y', plugins: { legend: { display: false } } });
+
+  novoGrafico('g-jci-classes', 'doughnut',
+    ['Conforme', 'Não Conforme', 'Não se aplica', 'Não avaliado'],
+    [{ data: [conf, nc, J.classes['Não se aplica'] || 0, J.classes['Não avaliado'] || 0],
+       backgroundColor: ['#16a34a','#dc2626','#94a3b8','#d97706'] }]);
+
+  const ncCap = [...J.capitulos].sort((a,b) => b.nao_conforme - a.nao_conforme).slice(0,12).reverse();
+  novoGrafico('g-jci-nc', 'bar', ncCap.map(c => c.capitulo),
+    [dsRotulo('Não conformes', ncCap.map(c => c.nao_conforme), '#dc2626')],
+    { indexAxis: 'y', plugins: { legend: { display: false } } });
+
+  novoGrafico('g-jci-origem', 'bar', Object.keys(J.comites_origem),
+    [dsRotulo('Planos', Object.values(J.comites_origem), Object.keys(J.comites_origem).map((_,i) => cor(i)))],
+    { plugins: { legend: { display: false } } });
+
+  novoGrafico('g-jci-status', 'doughnut', Object.keys(J.comites_status),
+    [{ data: Object.values(J.comites_status), backgroundColor: Object.keys(J.comites_status).map((_,i) => cor(i)) }]);
+};
+
+/* ============================== boot ============================== */
+document.getElementById('gerado').textContent = DADOS.gerado_em;
+RENDER.visao();
+renderizado.visao = true;
+
+/* abre a aba indicada no hash da URL (ex.: index.html#rounds) */
+const abaHash = (location.hash || '').replace('#', '');
+if (abaHash && document.querySelector(`#abas button[data-aba="${abaHash}"]`)) {
+  document.querySelector(`#abas button[data-aba="${abaHash}"]`).click();
+}
+</script>
+</body>
+</html>
