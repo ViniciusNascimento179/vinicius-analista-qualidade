@@ -65,6 +65,11 @@
   .atalho .desc { font-size: .82rem; color: var(--muted); }
 
   .aviso { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 10px; padding: 12px 16px; font-size: .85rem; margin-bottom: 14px; }
+  .seletor-anos { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .seletor-anos span { font-size: .85rem; color: var(--muted); margin-right: 4px; font-weight: 600; }
+  .seletor-anos button { padding: 7px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--muted); font-weight: 600; cursor: pointer; font-size: .88rem; }
+  .seletor-anos button:hover { border-color: var(--brand); color: var(--brand); }
+  .seletor-anos button.ativo { background: var(--brand); color: #fff; border-color: var(--brand); }
   .vazio { text-align: center; color: var(--muted); padding: 40px; }
   footer { color: var(--muted); font-size: .8rem; margin-top: 10px; }
 </style>
@@ -158,8 +163,9 @@ function irPara(aba){
 RENDER.visao = function(){
   const I = DADOS.inspecoes, R = DADOS.rounds, H = DADOS.huddle, W = DADOS.watcher, J = DADOS.jci;
 
-  const sumEvo = R.evolucao.reduce((a,m) => ({r: a.r + m.realizados, p: a.p + m.previstos}), {r:0,p:0});
-  const pctRounds = sumEvo.p ? Math.round(sumEvo.r / sumEvo.p * 100) : 0;
+  const totR = R.por_ano.reduce((a,p) => a + p.realizados, 0);
+  const totP = R.por_ano.reduce((a,p) => a + p.previstos, 0);
+  const pctRounds = totP ? Math.round(totR / totP * 100) : 0;
   const conclHuddle = (H.planos_status['Concluído'] || 0);
   const pctHuddle = Math.round(conclHuddle / H.planos_total * 100);
   const conf = (J.classes['Conforme'] || 0), nc = (J.classes['Não Conforme'] || 0);
@@ -170,7 +176,7 @@ RENDER.visao = function(){
   sec.innerHTML = `
     <div class="kpis">
       <div class="kpi bad"><div class="rotulo">Ações de inspeção</div><div class="valor">${fmt(I.total)}</div><div class="detalhe">${fmt(I.situacao_prazo.atrasada || 0)} atrasadas</div></div>
-      <div class="kpi info"><div class="rotulo">Rounds 2026</div><div class="valor">${pctRounds}%</div><div class="detalhe">${fmt(sumEvo.r)} de ${fmt(sumEvo.p)} realizados</div></div>
+      <div class="kpi info"><div class="rotulo">Rounds 2023–2026</div><div class="valor">${pctRounds}%</div><div class="detalhe">${fmt(totR)} de ${fmt(totP)} realizados</div></div>
       <div class="kpi warn"><div class="rotulo">Planos Huddle</div><div class="valor">${fmt(H.planos_total)}</div><div class="detalhe">${pctHuddle}% concluídos · ${fmt(H.follow_total)} follow-ups</div></div>
       <div class="kpi"><div class="rotulo">Pacientes Watcher</div><div class="valor">${fmt(W.total)}</div><div class="detalhe">${fmt(obitos)} óbitos · perm. média ${W.permanencia_media ?? '—'} dias</div></div>
       <div class="kpi ${pctJci >= 70 ? 'ok' : 'bad'}"><div class="rotulo">Conformidade JCI</div><div class="valor">${pctJci}%</div><div class="detalhe">${fmt(nc)} não conformes</div></div>
@@ -275,59 +281,95 @@ RENDER.inspecoes = function(){
 /* ============================== 3. rounds ============================== */
 RENDER.rounds = function(){
   const R = DADOS.rounds;
-  const sumEvo = R.evolucao.reduce((a,m) => ({r: a.r + m.realizados, p: a.p + m.previstos, d: a.d + m.pendentes}), {r:0,p:0,d:0});
-  const pctGeral = sumEvo.p ? Math.round(sumEvo.r / sumEvo.p * 100) : 0;
+  const anos = R.anos;
+  let anoSel = anos[anos.length - 1]; // começa no ano mais recente
 
   const sec = document.getElementById('aba-rounds');
   sec.innerHTML = `
-    <div class="kpis">
-      <div class="kpi"><div class="rotulo">Rounds realizados</div><div class="valor">${fmt(sumEvo.r)}</div><div class="detalhe">de ${fmt(sumEvo.p)} previstos</div></div>
-      <div class="kpi ${pctGeral >= 80 ? 'ok' : 'warn'}"><div class="rotulo">% de realização</div><div class="valor">${pctGeral}%</div></div>
-      <div class="kpi bad"><div class="rotulo">Pendentes</div><div class="valor">${fmt(sumEvo.d)}</div></div>
-      <div class="kpi info"><div class="rotulo">Interações registradas</div><div class="valor">${fmt(R.total_interacoes)}</div><div class="detalhe">em ${R.setores_interacoes.length} setores</div></div>
+    <div class="seletor-anos" id="rd-anos">
+      <span>Ano:</span>
+      ${anos.map(a => `<button data-ano="${a}" class="${a === anoSel ? 'ativo' : ''}">${a}</button>`).join('')}
     </div>
-    <div class="grade">
-      <div class="painel full"><h2>Rounds realizados x previstos por mês (2026)</h2><div class="canvas-wrap"><canvas id="g-rd-evol"></canvas></div></div>
-      <div class="painel"><h2>% de realização por setor</h2><div class="canvas-wrap alto"><canvas id="g-rd-setores"></canvas></div></div>
-      <div class="painel"><h2>Interações por categoria</h2><div class="canvas-wrap"><canvas id="g-rd-cats"></canvas></div></div>
-      <div class="painel full"><h2>Interações por mês (top categorias)</h2><div class="canvas-wrap"><canvas id="g-rd-mes"></canvas></div></div>
-      <div class="painel"><h2>Interações por setor</h2><div class="canvas-wrap alto"><canvas id="g-rd-int-setor"></canvas></div></div>
-      <div class="painel full"><h2>Desempenho por responsável</h2>
+    <div class="kpis" id="rd-kpis"></div>
+    <div class="grade" id="rd-graficos"></div>`;
+
+  function renderAno(a){
+    anoSel = a;
+    document.querySelectorAll('#rd-anos button').forEach(b => b.classList.toggle('ativo', +b.dataset.ano === a));
+    const evo = R.evolucao[String(a)] || [];
+    const sets = R.setores[String(a)] || [];
+    const resp = R.responsaveis[String(a)] || [];
+    const pa = R.por_ano.find(p => p.ano === a) || {realizados:0, previstos:0, pendentes:0, pct:0};
+    const INT = R.interacoes.por_ano[String(a)] || {total:0, categorias:[], meses:[], setores:[], mes_categoria:{meses:[],series:[]}};
+
+    document.getElementById('rd-kpis').innerHTML = `
+      <div class="kpi"><div class="rotulo">Rounds realizados (${a})</div><div class="valor">${fmt(pa.realizados)}</div><div class="detalhe">de ${fmt(pa.previstos)} previstos</div></div>
+      <div class="kpi ${pa.pct >= 80 ? 'ok' : 'warn'}"><div class="rotulo">% de realização</div><div class="valor">${pct(pa.pct)}</div></div>
+      <div class="kpi bad"><div class="rotulo">Pendentes</div><div class="valor">${fmt(pa.pendentes)}</div></div>
+      <div class="kpi info"><div class="rotulo">Interações registradas (${a})</div><div class="valor">${fmt(INT.total)}</div><div class="detalhe">em ${INT.setores.length} setores</div></div>`;
+
+    document.getElementById('rd-graficos').innerHTML = `
+      <div class="painel full"><h2>Realizados x previstos por ano</h2><div class="canvas-wrap"><canvas id="g-rd-anos"></canvas></div></div>
+      <div class="painel full"><h2>Rounds por mês em ${a}</h2><div class="canvas-wrap"><canvas id="g-rd-evol"></canvas></div></div>
+      <div class="painel"><h2>% de realização por setor (${a})</h2><div class="canvas-wrap alto"><canvas id="g-rd-setores"></canvas></div></div>
+      <div class="painel"><h2>Interações por categoria (${a})</h2><div class="canvas-wrap"><canvas id="g-rd-cats"></canvas></div></div>
+      <div class="painel full"><h2>Interações por mês — top 5 categorias (${a})</h2><div class="canvas-wrap"><canvas id="g-rd-mes"></canvas></div></div>
+      <div class="painel"><h2>Interações por setor (${a})</h2><div class="canvas-wrap alto"><canvas id="g-rd-int-setor"></canvas></div></div>
+      <div class="painel full"><h2>Desempenho por responsável (${a})</h2>
         <div style="max-height:380px; overflow:auto;">
           <table>
             <thead><tr><th>Responsáveis</th><th>Realizados</th><th>Previstos</th><th>% realização</th></tr></thead>
             <tbody>
-              ${R.responsaveis.map(r => `
+              ${resp.length ? resp.map(r => `
                 <tr><td>${r.responsavel}</td><td>${fmt(r.realizados)}</td><td>${fmt(r.previstos)}</td>
-                <td><span class="badge ${r.pct >= 80 ? 'ok' : r.pct >= 50 ? 'warn' : 'bad'}">${pct(r.pct)}</span></td></tr>`).join('')}
+                <td><span class="badge ${r.pct >= 80 ? 'ok' : r.pct >= 50 ? 'warn' : 'bad'}">${pct(r.pct)}</span></td></tr>`).join('')
+              : '<tr><td colspan="4" class="vazio">Sem registro de responsáveis neste ano na planilha</td></tr>'}
             </tbody>
           </table>
         </div>
-      </div>
-    </div>`;
+      </div>`;
 
-  novoGrafico('g-rd-evol', 'bar', R.evolucao.map(e => e.mes), [
-    { label: 'Realizados', data: R.evolucao.map(e => e.realizados), backgroundColor: '#16a34a', borderRadius: 6 },
-    { label: 'Previstos', data: R.evolucao.map(e => e.previstos), backgroundColor: '#94a3b8', borderRadius: 6 },
-    { label: 'Pendentes', data: R.evolucao.map(e => e.pendentes), backgroundColor: '#dc2626', borderRadius: 6 }
-  ]);
+    // destrói gráficos do ano anterior antes de recriar
+    ['g-rd-anos','g-rd-evol','g-rd-setores','g-rd-cats','g-rd-mes','g-rd-int-setor'].forEach(id => {
+      const c = Chart.getChart(id); if (c) c.destroy();
+    });
 
-  const set = [...R.setores].sort((a,b) => a.pct - b.pct);
-  novoGrafico('g-rd-setores', 'bar', set.map(s => s.setor),
-    [{ label: '% realizado', data: set.map(s => s.pct),
-       backgroundColor: set.map(s => s.pct >= 80 ? '#16a34a' : s.pct >= 50 ? '#d97706' : '#dc2626') }],
-    { indexAxis: 'y', plugins: { legend: { display: false } } });
+    novoGrafico('g-rd-anos', 'bar', R.por_ano.map(p => p.ano), [
+      { label: 'Realizados', data: R.por_ano.map(p => p.realizados), backgroundColor: '#16a34a', borderRadius: 6 },
+      { label: 'Previstos', data: R.por_ano.map(p => p.previstos), backgroundColor: '#94a3b8', borderRadius: 6 },
+      { label: 'Pendentes', data: R.por_ano.map(p => p.pendentes), backgroundColor: '#dc2626', borderRadius: 6 }
+    ]);
 
-  novoGrafico('g-rd-cats', 'doughnut', R.categorias.map(c => c.categoria),
-    [{ data: R.categorias.map(c => c.total), backgroundColor: R.categorias.map((_,i) => cor(i)) }]);
+    novoGrafico('g-rd-evol', 'bar', evo.map(e => e.mes), [
+      { label: 'Realizados', data: evo.map(e => e.realizados), backgroundColor: '#16a34a', borderRadius: 6 },
+      { label: 'Previstos', data: evo.map(e => e.previstos), backgroundColor: '#94a3b8', borderRadius: 6 },
+      { label: 'Pendentes', data: evo.map(e => e.pendentes), backgroundColor: '#dc2626', borderRadius: 6 }
+    ]);
 
-  novoGrafico('g-rd-mes', 'line', R.interacoes_mes.meses,
-    R.interacoes_mes.series.map((s,i) => ({ label: s.categoria, data: s.valores, borderColor: cor(i), tension: .3 })));
+    const set = [...sets].sort((x,y) => x.pct - y.pct);
+    novoGrafico('g-rd-setores', 'bar', set.map(s => s.setor),
+      [{ label: '% realizado', data: set.map(s => s.pct),
+         backgroundColor: set.map(s => s.pct >= 80 ? '#16a34a' : s.pct >= 50 ? '#d97706' : '#dc2626') }],
+      { indexAxis: 'y', plugins: { legend: { display: false } } });
 
-  const si = [...R.setores_interacoes].sort((a,b) => a.total - b.total).slice(-15);
-  novoGrafico('g-rd-int-setor', 'bar', si.map(s => s.setor),
-    [dsRotulo('Interações', si.map(s => s.total), '#0891b2')],
-    { indexAxis: 'y', plugins: { legend: { display: false } } });
+    novoGrafico('g-rd-cats', 'doughnut', INT.categorias.map(c => c.categoria),
+      [{ data: INT.categorias.map(c => c.total), backgroundColor: INT.categorias.map((_,i) => cor(i)) }]);
+
+    novoGrafico('g-rd-mes', 'line', INT.mes_categoria.meses,
+      INT.mes_categoria.series.map((s,i) => ({ label: s.categoria, data: s.valores, borderColor: cor(i), tension: .3 })));
+
+    const si = [...INT.setores].sort((x,y) => x.total - y.total).slice(-15);
+    novoGrafico('g-rd-int-setor', 'bar', si.map(s => s.setor),
+      [dsRotulo('Interações', si.map(s => s.total), '#0891b2')],
+      { indexAxis: 'y', plugins: { legend: { display: false } } });
+  }
+
+  document.getElementById('rd-anos').addEventListener('click', e => {
+    const b = e.target.closest('button[data-ano]');
+    if (b) renderAno(+b.dataset.ano);
+  });
+
+  renderAno(anoSel);
 };
 
 /* ============================== 4. huddle ============================== */
