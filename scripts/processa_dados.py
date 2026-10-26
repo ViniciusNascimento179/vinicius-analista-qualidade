@@ -21,7 +21,8 @@ Regras gerais:
   - Categorias com grafia dupla são normalizadas
   - Watcher: descarta Prontuário, N° Atendimento, Paciente, Nascimento;
     desfecho normalizado; tempo de permanência calculado
-  - Rounds: meses futuros (Realizados=0 e Previstos=0) descartados
+  - Rounds: meses futuros (Realizados=0 e Previstos=0) descartados;
+    painel com filtro por ano (2023-2026) e interações por ano
 """
 from __future__ import annotations
 
@@ -163,7 +164,7 @@ def painel_inspecoes(df: pd.DataFrame) -> dict:
     return {
         "total": int(len(df)),
         "status": {k.title(): int(v) for k, v in status_cnt.items()},
-        "situacao_prazo": {k: int(v) for k, v in situacao_cnt.items()},
+        "situacao_prazo": {k: int(v) for k, v in situacao_prazo.items()},
         "prioridade": {k.title(): int(v) for k, v in prior_cnt.items()},
         "setor_responsavel": setor_resp,
         "setor_origem": setor_origem,
@@ -347,7 +348,7 @@ def painel_watcher(df: pd.DataFrame) -> dict:
         return s if s and s.lower() != "nan" else "Não informado"
 
     w["desfecho"] = w["Desfecho final"].map(limpa).map(
-        lambda s: "Óbito" if s.lower() == "óbito" else s)
+        lambda s: "Óbito" if s.lower() == "óbito" + "") else s)
     # motivo: minúsculas pra juntar grafias ('Risco de deterioração' = 'Risco de Deterioração')
     w["motivo"] = w["Motivo"].map(limpa).map(
         lambda s: s.lower() if s != "Não informado" else s)
