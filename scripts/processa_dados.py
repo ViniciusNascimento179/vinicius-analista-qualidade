@@ -11,7 +11,7 @@ com um bloco por painel:
   4. Interações Round          -> painel "rounds" (detalhe por setor/quarto)
   5. Planos de ação Huddle     -> painel "huddle" (ações por área/categoria/status)
   6. Foloow Up Huddle          -> painel "huddle" (follow-up de problemas)
-  7. Pacientes Watcher         -> painel "watcher" (ANONIMIZADO: sem prontuário/nome/nascimento)
+  7. Pacientes Watcher         -> painel "watcher" (ANONIMIZADO)
   8. Planos de ação JCI        -> painel "jci" (conformidade por capítulo)
   9. Planos de Ação            -> painel "jci" (planos de comitês)
 
@@ -19,10 +19,9 @@ Regras gerais:
   - Linhas totalmente vazias ou de template são descartadas
   - Huddle/Follow-up: cabeçalho na linha 2 (linha 1 vazia)
   - Categorias com grafia dupla são normalizadas
-  - Watcher: descarta Prontuário, N° Atendimento, Paciente, Nascimento;
-    desfecho normalizado; tempo de permanência calculado
-  - Rounds: meses futuros (Realizados=0 e Previstos=0) descartados;
-    painel com filtro por ano (2023-2026) e interações por ano
+  - Watcher: descarta identificadores diretos (prontuário, nome, nascimento, quarto)
+  - Rounds: meses futuros (Realizados=0 e Previstos=0) descartados
+  - O painel de inspeções é gerado pelo módulo painel_inspecoes_v3.py
 """
 from __future__ import annotations
 
@@ -47,7 +46,6 @@ MESES_PT = {
 MES_ORDEM = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
              "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
 
-# Abas que NÃO viram painel
 ABAS_APOIO = {"Listas", "Dicionario_de_Campos", "Dashboard_Modelo"}
 
 
@@ -60,14 +58,12 @@ def _norm(txt) -> str:
 
 
 def _mes_num(v) -> int | None:
-    """Aceita 'Janeiro', 1, '1' e devolve 1..12."""
     if v is None or (isinstance(v, float) and pd.isna(v)):
         return None
     if isinstance(v, (int, float)):
         n = int(v)
         return n if 1 <= n <= 12 else None
-    s = _norm(v)
-    return MESES_PT.get(s)
+    return MESES_PT.get(_norm(v))
 
 
 def ler_abas() -> dict[str, pd.DataFrame]:
@@ -83,14 +79,12 @@ def ler_abas() -> dict[str, pd.DataFrame]:
                 if titulo in ABAS_APOIO:
                     print(f"[aba] {titulo} — apoio, ignorada")
                     continue
-                # localiza a primeira linha com >=3 células preenchidas = cabeçalho
                 inicio = 0
                 for i, linha in bruta.iterrows():
                     if linha.notna().sum() >= 3:
                         inicio = i
                         break
                 df = bruta.iloc[inicio + 1:].copy()
-                # limpa cabeçalhos: espaços e apóstrofos/aspas sobrando ('Categoria')
                 cols = [str(c).strip().strip("'\"").strip() for c in bruta.iloc[inicio]]
                 df.columns = cols
                 df = df.dropna(how="all").reset_index(drop=True)
@@ -101,7 +95,7 @@ def ler_abas() -> dict[str, pd.DataFrame]:
 
 
 # --------------------------------------------------------------------------- #
-# 1. Inspeção das Instalações
+# 1. Inspeção das Instalações (versão simples; o módulo v3 sobrescreve no main)
 # --------------------------------------------------------------------------- #
 def painel_inspecoes(df: pd.DataFrame) -> dict:
     brutas = len(df)
@@ -187,13 +181,11 @@ def painel_rounds(rounds: pd.DataFrame, detalhe: pd.DataFrame) -> dict:
     r["mes_n"] = r["Meses"].map(_mes_num)
     r = r.dropna(subset=["mes_n"])
     r["mes_n"] = r["mes_n"].astype(int)
-    # descarta meses futuros / sem programação (Realizados=0 e Previstos=0)
     r = r[~((r["Realizados"] == 0) & (r["Previstos"] == 0))]
     r["Ano"] = r["Ano"].fillna(0).astype(int)
     anos = sorted(a for a in r["Ano"].unique() if a)
     print(f"[rounds] {len(rounds)} -> {len(r)} registros válidos, anos {anos}")
 
-    # por ano: o gráfico "realizados x previstos por ano"
     por_ano = []
     for a in anos:
         ra = r[r["Ano"] == a]
@@ -202,7 +194,6 @@ def painel_rounds(rounds: pd.DataFrame, detalhe: pd.DataFrame) -> dict:
                         "pendentes": int(ra["Pendentes"].sum()),
                         "pct": round(real / prev * 100, 1) if prev else 0})
 
-    # evolução mensal, setores e responsáveis SEPARADOS POR ANO
     evolucao, setores, responsaveis = {}, {}, {}
     for a in anos:
         ra = r[r["Ano"] == a]
@@ -225,7 +216,6 @@ def painel_rounds(rounds: pd.DataFrame, detalhe: pd.DataFrame) -> dict:
             for s, row in pr.iterrows()
         ]
 
-    # Interações Round (detalhe, COM ano) — substitui a aba agregada sem ano
     d = detalhe.copy()
     d["Ano"] = pd.to_numeric(d["Ano"], errors="coerce")
     d = d.dropna(subset=["Ano"])
@@ -235,7 +225,7 @@ def painel_rounds(rounds: pd.DataFrame, detalhe: pd.DataFrame) -> dict:
     d["mes_n"] = d["Mês"].map(_mes_num)
     d = d.dropna(subset=["mes_n"])
     d["mes_n"] = d["mes_n"].astype(int)
-    print(f"[rounds] interações: {len(detalhe)} -> {len(d)} com ano válido ({sorted(d['Ano'].unique())})")
+    print(f"[rounds] interações: {len(detalhe)} -> {len(d)} com ano válido")
 
     interacoes = {"anos": sorted(int(a) for a in d["Ano"].unique()), "por_ano": {}}
     for a in interacoes["anos"]:
@@ -332,8 +322,6 @@ def painel_huddle(planos: pd.DataFrame, follow: pd.DataFrame) -> dict:
 # --------------------------------------------------------------------------- #
 def painel_watcher(df: pd.DataFrame) -> dict:
     brutas = len(df)
-    # ANONIMIZAÇÃO: remove identificadores diretos e quase-identificadores
-    # (quarto/leito quase identifica o paciente; Responsável tem nomes próprios da equipe)
     w = df.drop(columns=["Prontuário", "N° Atendimento", "Paciente", "Nascimento",
                          "Setor inicial", "Setor final", "Histórico de setores",
                          "Responsável", "Observações de qualidade"],
@@ -349,7 +337,6 @@ def painel_watcher(df: pd.DataFrame) -> dict:
 
     w["desfecho"] = w["Desfecho final"].map(limpa).map(
         lambda s: "Óbito" if s.lower() == "óbito" else s)
-    # motivo: minúsculas pra juntar grafias ('Risco de deterioração' = 'Risco de Deterioração')
     w["motivo"] = w["Motivo"].map(limpa).map(
         lambda s: s.lower() if s != "Não informado" else s)
     w["evolucao"] = w["Última evolução"].map(limpa).map(
@@ -473,6 +460,14 @@ def main():
         "jci": painel_jci(abas["Planos de ação JCI"], abas["Planos de Ação "]),
     }
 
+    # painel de Inspecoes v3 (filtro por ano + 8 graficos)
+    try:
+        from painel_inspecoes_v3 import calcular as _calc_v3
+        dados["inspecoes"] = _calc_v3(abas)
+        print("[inspecoes] v3 aplicado (filtro por ano + graficos em aberto)")
+    except Exception as e:
+        print(f"[inspecoes] AVISO: v3 nao aplicado ({e}) - mantendo versao simples")
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
     tmp = OUT.with_suffix(".js.tmp")
     tmp.write_text("const DADOS = " + json.dumps(dados, ensure_ascii=False) + ";\n",
@@ -482,7 +477,11 @@ def main():
 
     print("\n=== RESUMO ===")
     i, r, h, w, j = dados["inspecoes"], dados["rounds"], dados["huddle"], dados["watcher"], dados["jci"]
-    print(f"Inspeções: {i['total']} ações | situacao: {i['situacao_prazo']}")
+    if isinstance(i.get("total"), dict):
+        print(f"Inspeções: {i['total']['total']} ações, anos {i.get('anos')} | "
+              f"abertos: {i['total']['abertos']} | situacao: {i['total']['situacao_prazo']}")
+    else:
+        print(f"Inspeções: {i['total']} ações | situacao: {i['situacao_prazo']}")
     print(f"Rounds: {r['total_registros']} registros, {len(r['setores'])} setores | interações: {r['total_interacoes']}")
     print(f"Huddle: {h['planos_total']} planos + {h['follow_total']} follow-ups")
     print(f"Watcher: {w['total']} pacientes (anonimizado) | desfechos: {w['desfechos']}")
