@@ -161,7 +161,7 @@ function irPara(aba){
 
 /* ============================== 1. visão geral ============================== */
 RENDER.visao = function(){
-  const I = DADOS.inspecoes, R = DADOS.rounds, H = DADOS.huddle, W = DADOS.watcher, J = DADOS.jci;
+  const I = DADOS.inspecoes.total, R = DADOS.rounds, H = DADOS.huddle, W = DADOS.watcher, J = DADOS.jci;
 
   const totR = R.por_ano.reduce((a,p) => a + p.realizados, 0);
   const totP = R.por_ano.reduce((a,p) => a + p.previstos, 0);
@@ -217,68 +217,8 @@ RENDER.visao = function(){
 };
 
 /* ============================== 2. inspeções ============================== */
-RENDER.inspecoes = function(){
-  const I = DADOS.inspecoes;
-  const sec = document.getElementById('aba-inspecoes');
-  sec.innerHTML = `
-    <div class="kpis">
-      <div class="kpi"><div class="rotulo">Total de ações</div><div class="valor">${fmt(I.total)}</div></div>
-      <div class="kpi ok"><div class="rotulo">Concluídas</div><div class="valor">${fmt(I.situacao_prazo.concluida || 0)}</div></div>
-      <div class="kpi bad"><div class="rotulo">Atrasadas</div><div class="valor">${fmt(I.situacao_prazo.atrasada || 0)}</div></div>
-      <div class="kpi warn"><div class="rotulo">Sem prazo definido</div><div class="valor">${fmt(I.situacao_prazo.sem_prazo || 0)}</div></div>
-    </div>
-    <div class="grade">
-      <div class="painel"><h2>Por status</h2><div class="canvas-wrap"><canvas id="g-ins-status"></canvas></div></div>
-      <div class="painel"><h2>Por prioridade GUT</h2><div class="canvas-wrap"><canvas id="g-ins-prior"></canvas></div></div>
-      <div class="painel"><h2>Setores responsáveis (top 10)</h2><div class="canvas-wrap"><canvas id="g-ins-resp"></canvas></div></div>
-      <div class="painel"><h2>Setores de origem (top 10)</h2><div class="canvas-wrap"><canvas id="g-ins-origem"></canvas></div></div>
-      <div class="painel full"><h2>Evolução mensal de registros</h2><div class="canvas-wrap"><canvas id="g-ins-evol"></canvas></div></div>
-      <div class="painel full"><h2>Categorias FMS</h2><div class="canvas-wrap"><canvas id="g-ins-cat"></canvas></div></div>
-      <div class="painel full"><h2>Ações de prioridade alta</h2>
-        <div style="max-height:420px; overflow:auto;">
-          <table>
-            <thead><tr><th>Data</th><th>Setor</th><th>Apontamento</th><th>Responsável</th><th>Prioridade</th><th>Status</th></tr></thead>
-            <tbody>
-              ${I.prioridade_alta.map(a => `
-                <tr>
-                  <td>${a.data}</td><td>${a.setor}</td><td class="apont">${a.apontamento}</td>
-                  <td>${a.responsavel}</td><td><span class="badge bad">${a.prioridade}</span></td>
-                  <td><span class="badge ${badgeClasse(a.status)}">${a.status}</span></td>
-                </tr>`).join('') || '<tr><td colspan="6" class="vazio">Nenhuma ação de prioridade alta</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>`;
+// Inspeções: renderização em inspecoes_v3.js, carregado antes da inicialização.
 
-  novoGrafico('g-ins-status', 'doughnut', Object.keys(I.status),
-    [{ data: Object.values(I.status), backgroundColor: Object.keys(I.status).map((_,i) => cor(i)) }]);
-
-  novoGrafico('g-ins-prior', 'bar', Object.keys(I.prioridade),
-    [dsRotulo('Ações', Object.values(I.prioridade), Object.keys(I.prioridade).map((_,i) => cor(i)))],
-    { plugins: { legend: { display: false } } });
-
-  const respTop = Object.entries(I.setor_responsavel).sort((a,b) => b[1]-a[1]).slice(0,10).reverse();
-  novoGrafico('g-ins-resp', 'bar', respTop.map(e => e[0]),
-    [dsRotulo('Ações', respTop.map(e => e[1]), '#2563eb')],
-    { indexAxis: 'y', plugins: { legend: { display: false } } });
-
-  const origTop = Object.entries(I.setor_origem).sort((a,b) => b[1]-a[1]).slice(0,10).reverse();
-  novoGrafico('g-ins-origem', 'bar', origTop.map(e => e[0]),
-    [dsRotulo('Ações', origTop.map(e => e[1]), '#0891b2')],
-    { indexAxis: 'y', plugins: { legend: { display: false } } });
-
-  novoGrafico('g-ins-evol', 'line', I.evolucao.map(e => e.mes),
-    [{ label: 'Ações registradas', data: I.evolucao.map(e => e.total), borderColor: '#1e3a5f',
-       backgroundColor: 'rgba(30,58,95,.12)', fill: true, tension: .3 }]);
-
-  const catTop = Object.entries(I.categoria).sort((a,b) => b[1]-a[1]).slice(0,12).reverse();
-  novoGrafico('g-ins-cat', 'bar', catTop.map(e => e[0]),
-    [dsRotulo('Ações', catTop.map(e => e[1]), '#7c3aed')],
-    { indexAxis: 'y', plugins: { legend: { display: false } } });
-};
-
-/* ============================== 3. rounds ============================== */
 RENDER.rounds = function(){
   const R = DADOS.rounds;
   const anos = R.anos;
@@ -538,6 +478,9 @@ RENDER.jci = function(){
     [{ data: Object.values(J.comites_status), backgroundColor: Object.keys(J.comites_status).map((_,i) => cor(i)) }]);
 };
 
+</script>
+<script src="inspecoes_v3.js"></script>
+<script>
 /* ============================== boot ============================== */
 document.getElementById('gerado').textContent = DADOS.gerado_em;
 RENDER.visao();

@@ -1,9 +1,13 @@
 name: Atualizar dashboard
 on:
   push:
+    branches: [main]
     paths:
       - "data/**"
       - "scripts/**"
+      - "dashboard/**"
+      - "requirements.txt"
+      - ".github/workflows/atualizar-dashboard.yml"
   workflow_dispatch:
 permissions:
   contents: write
@@ -25,7 +29,9 @@ jobs:
       - name: Dependências
         run: pip install -r requirements.txt
       - name: Processar planilha
-        run: python scripts/processa_dados.py
+        run: |
+          python -m unittest discover -s scripts -p 'test_*.py'
+          python scripts/processa_dados.py
       - name: Commit dos dados gerados
         run: |
           git config user.name "github-actions[bot]"

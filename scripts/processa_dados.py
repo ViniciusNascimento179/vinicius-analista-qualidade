@@ -450,29 +450,22 @@ def painel_jci(jci: pd.DataFrame, comites: pd.DataFrame) -> dict:
 # --------------------------------------------------------------------------- #
 def main():
     abas = ler_abas()
+    from painel_inspecoes_v3 import calcular as calcular_inspecoes
 
     dados = {
         "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M"),
-        "inspecoes": painel_inspecoes(abas["Inspeção das Instalações"]),
+        "inspecoes": calcular_inspecoes(abas),
         "rounds": painel_rounds(abas["Rounds"], abas["Interações Round"]),
         "huddle": painel_huddle(abas["Planos de ação Huddle"], abas["Foloow Up Huddle"]),
         "watcher": painel_watcher(abas["Pacientes Watcher"]),
         "jci": painel_jci(abas["Planos de ação JCI"], abas["Planos de Ação "]),
     }
 
-    # painel de Inspecoes v3 (filtro por ano + 8 graficos)
-    try:
-        from painel_inspecoes_v3 import calcular as _calc_v3
-        dados["inspecoes"] = _calc_v3(abas)
-        print("[inspecoes] v3 aplicado (filtro por ano + graficos em aberto)")
-    except Exception as e:
-        print(f"[inspecoes] AVISO: v3 nao aplicado ({e}) - mantendo versao simples")
-
     OUT.parent.mkdir(parents=True, exist_ok=True)
     tmp = OUT.with_suffix(".js.tmp")
     tmp.write_text("const DADOS = " + json.dumps(dados, ensure_ascii=False) + ";\n",
                    encoding="utf-8")
-    tmp.rename(OUT)
+    tmp.replace(OUT)
     print(f"[ok] {OUT} ({OUT.stat().st_size / 1024:.0f} KB)")
 
     print("\n=== RESUMO ===")

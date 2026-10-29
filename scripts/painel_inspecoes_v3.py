@@ -17,53 +17,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from processa_dados import _norm, _sem_acento, MES_ORDEM  # noqa: E402
 
 
-# Mapa setor -> andar (inferido do nome/pavimento do servico no HVC).
-# A planilha NAO tem coluna de andar; este mapa e uma aproximacao documentada.
-_ANDAR_FIXO = {
-    "uco": "Térreo", "psa": "Térreo", "ps adulto": "Térreo", "pronto socorro": "Térreo",
-    "psi": "Térreo", "ps infantil": "Térreo", "pronto socorro infantil": "Térreo",
-    "recepcao internacao": "Térreo", "recepcao da internacao": "Térreo",
-    "recepcao imagem/ entrega de exames": "Térreo",
-    "cme": "Térreo", "centro cirurgico": "Térreo", "atual apoio cirurgico": "Térreo",
-    "apoio cirurgico": "Térreo",
-    "hemodinamica": "Térreo", "endoscopia": "Térreo",
-    "rm e uss": "Térreo", "ressonancia magnetica": "Térreo", "ultrassom": "Térreo",
-    "tomografia e ultrassom": "Térreo",
-    "laboratorio fleury": "Térreo", "farmacia central": "Térreo", "farmacia crc": "Térreo",
-    "almoxarifado": "Subsolo", "almoxarifado e caf": "Subsolo",
-    "uti ped": "2° Andar", "uti pediatrica": "2° Andar",
-    "uti neo": "2° Andar", "uti neonatal": "2° Andar",
-    "maternidade": "3° Andar",
-    "pediatria": "4° Andar",
-    "tmo": "5° Andar",
-    "unidade neurologica": "5° Andar",
-    "semi intensiva 1": "2° Andar",
-    "3°c semi intensiva": "3° Andar",
-}
-
-
 def _andar_do_setor(setor: str) -> str:
-    """Infere o andar a partir do nome do setor (a planilha nao tem coluna de andar)."""
+    """Usa apenas referências explícitas; nomes de serviços não comprovam andar."""
     s = _sem_acento(str(setor)).lower().strip()
-
-    if s in _ANDAR_FIXO:
-        return _ANDAR_FIXO[s]
-
-    if any(k in s for k in ("subsolo", "estacionamento", "docas", "doca")):
+    if "subsolo" in s:
         return "Subsolo"
-    if "heliponto" in s or "cobertura" in s:
-        return "Cobertura"
-    if any(k in s for k in ("terreo", "recepcao", "refeitorio", "cozinha",
-                            "corredor e ala inoperante", "corredor do terreo",
-                            "casarao", "brasani", "caf 1")):
+    if "terreo" in s:
         return "Térreo"
-
-    m = re.search(r"(\d+)\s*[°ºo]?\s*[dcba]?\b", s)
-    if m:
-        n = int(m.group(1))
-        if 1 <= n <= 9:
-            return f"{n}° Andar"
-    return "Não identificado"
+    if "cobertura" in s:
+        return "Cobertura"
+    # Exemplos explícitos: 2°C, 2D, 3º andar, Oncologia (1°D).
+    m = re.search(r"(?<!\d)([1-9])\s*[°ºo]?\s*(?:andar\b|[abcd]\b)", s)
+    return f"{m.group(1)}° Andar" if m else "Não identificado"
 
 
 # grafias equivalentes -> nome canonico (para nao duplicar setor no grafico)
@@ -163,6 +128,7 @@ def painel_inspecoes(df: pd.DataFrame) -> dict:
         conc = sub[sub["concluido"]]
 
         g = sub.groupby(["mes_ano", "concluido"]).size().unstack(fill_value=0)
+        g = g.reindex(columns=[False, True], fill_value=0)
         if len(g):
             idx = pd.period_range(g.index.min(), g.index.max(), freq="M")
             g = g.reindex(idx, fill_value=0)
@@ -178,7 +144,7 @@ def painel_inspecoes(df: pd.DataFrame) -> dict:
                         .value_counts().items()]
 
         abertos_setor = [{"setor": s, "total": int(n)} for s, n in
-                         ab["setor_canon"].fillna("Não informado").value_counts().head(18).items()]
+                         ab["setor_canon"].fillna("Não informado").value_counts().items()]
 
         abertos_andar = [{"andar": a, "total": int(n)} for a, n in
                          ab["andar"].value_counts().items()]
@@ -189,7 +155,7 @@ def painel_inspecoes(df: pd.DataFrame) -> dict:
                    ab["Categoria por Tópico do FMS"].fillna("Não informado").astype(str).str.strip()
                    .value_counts().items()]
 
-        insp = sub.groupby("mes_ano").apply(lambda x: x.groupby(["data", "Setor"]).ngroups)
+        insp = sub.drop_duplicates(["data", "setor_canon"]).groupby("mes_ano").size()
         if len(insp):
             idx = pd.period_range(insp.index.min(), insp.index.max(), freq="M")
             insp = insp.reindex(idx, fill_value=0)
@@ -218,7 +184,7 @@ def painel_inspecoes(df: pd.DataFrame) -> dict:
             "abertos": int(len(ab)),
             "concluidos": int(len(conc)),
             "pct_conclusao": round(len(conc) / len(sub) * 100, 1) if len(sub) else 0,
-            "inspecoes": int(sub.groupby(["data", "Setor"]).ngroups) if len(sub) else 0,
+            "inspecoes": int(sub.groupby(["data", "setor_canon"]).ngroups) if len(sub) else 0,
             "apontamentos_mes": apont_mes,
             "status": {"Concluídos": int(len(conc)), "Em andamento": int(len(ab))},
             "atrasos_responsavel": atrasos_resp,
