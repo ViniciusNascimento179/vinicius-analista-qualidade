@@ -46,7 +46,7 @@
         <div class="painel"><h2>Atrasos por setor responsável</h2><div class="canvas-wrap alto"><canvas id="g-iat"></canvas></div></div>
         <div class="painel"><h2>Em aberto por setor inspecionado</h2><div class="canvas-wrap alto"><canvas id="g-ise"></canvas></div></div>
         <div class="painel"><h2>Em aberto por andar</h2><p class="vazio">Andar identificado apenas quando explícito no nome do setor. Demais setores: não identificado.</p><div class="canvas-wrap"><canvas id="g-ian"></canvas></div></div>
-        <div class="painel"><h2>Em aberto por categoria FMS</h2><div class="canvas-wrap alto"><canvas id="g-icf"></canvas></div></div>
+        <div class="painel"><h2>Apontamentos por categoria FMS — todos os status</h2><p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Inclui todas as categorias, com ações concluídas e em aberto no período selecionado.</p><div class="canvas-wrap alto"><canvas id="g-icf"></canvas></div></div>
         <div class="painel full"><h2>Inspeções por mês (quantidade)</h2><p class="vazio">Contagem por data de registro e setor; múltiplos apontamentos da mesma visita contam uma vez.</p><div class="canvas-wrap"><canvas id="g-iim"></canvas></div></div>
         <div class="painel full"><h2>Ações em aberto de prioridade alta/imediata</h2><p class="vazio">Até 40 ações mais recentes do período.</p>
           <div style="max-height:420px; overflow:auto;">
@@ -67,7 +67,7 @@
         </div>`;
 
       [['g-iat', B.atrasos_responsavel], ['g-ise', B.abertos_setor],
-       ['g-ian', B.abertos_andar], ['g-icf', B.categoria_fms_aberto]].forEach(([id, rows]) => {
+       ['g-ian', B.abertos_andar], ['g-icf', B.categoria_fms]].forEach(([id, rows]) => {
         document.getElementById(id).parentElement.style.height = `${Math.max(280, rows.length * 28 + 50)}px`;
       });
 
@@ -106,10 +106,10 @@
           an.map(x => x.andar === 'Não identificado' ? '#94a3b8' : '#7c3aed'))],
         { indexAxis: 'y', plugins: { legend: { display: false } } });
 
-      const cf = [...B.categoria_fms_aberto].sort((a,b) => b.total - a.total);
+      const cf = [...B.categoria_fms].sort((a,b) => b.total - a.total);
       novoGrafico('g-icf', 'bar', cf.map(x => x.categoria),
-        [dsRotulo('Em aberto', cf.map(x => x.total), '#0891b2')],
-        { indexAxis: 'y', plugins: { legend: { display: false } } });
+        [dsRotulo('Apontamentos (todos os status)', cf.map(x => x.total), '#0891b2')],
+        { indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { autoSkip: false, font: { size: 10 } } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.parsed.x} apontamentos (${B.total ? fmt(ctx.parsed.x / B.total * 100) : '0'}% do total)` } } } });
 
       const im = B.inspecoes_mes;
       novoGrafico('g-iim', 'line', im.labels,

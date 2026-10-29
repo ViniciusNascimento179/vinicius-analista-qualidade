@@ -154,6 +154,9 @@ def painel_inspecoes(df: pd.DataFrame) -> dict:
         cat_fms = [{"categoria": c, "total": int(n)} for c, n in
                    ab["Categoria por Tópico do FMS"].fillna("Não informado").astype(str).str.strip()
                    .value_counts().items()]
+        cat_fms_total = [{"categoria": c, "total": int(n)} for c, n in
+                         sub["Categoria por Tópico do FMS"].fillna("Não informado").astype(str).str.strip()
+                         .replace("", "Não informado").value_counts().items()]
 
         insp = sub.drop_duplicates(["data", "setor_canon"]).groupby("mes_ano").size()
         if len(insp):
@@ -192,6 +195,7 @@ def painel_inspecoes(df: pd.DataFrame) -> dict:
             "abertos_andar": abertos_andar,
             "prioridade_aberto": prioridade,
             "categoria_fms_aberto": cat_fms,
+            "categoria_fms": cat_fms_total,
             "inspecoes_mes": insp_mes,
             "situacao_prazo": {k: int(v) for k, v in sub["situacao"].value_counts().items()},
             "gut_medio": round(float(sub["gut"].mean()), 1) if sub["gut"].notna().any() else None,

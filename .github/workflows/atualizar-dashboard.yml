@@ -28,10 +28,16 @@ jobs:
           python-version: "3.12"
       - name: Dependências
         run: pip install -r requirements.txt
+      - name: Node para validar análises
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Processar planilha
         run: |
           python -m unittest discover -s scripts -p 'test_*.py'
           python scripts/processa_dados.py
+      - name: Validar análises críticas e categorias FMS
+        run: node scripts/test_analises.cjs
       - name: Commit dos dados gerados
         run: |
           git config user.name "github-actions[bot]"

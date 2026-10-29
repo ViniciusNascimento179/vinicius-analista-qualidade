@@ -43,3 +43,33 @@ pip install -r requirements.txt
 python scripts/processa_dados.py
 # abrir dashboard/index.html no navegador
 ```
+# Análise crítica dos painéis
+
+Cada aba contém uma análise descritiva dos dados: achados, interpretação, ações
+sugeridas, acompanhamento e limitações. Nas abas Inspeções e Rounds, o texto
+acompanha o ano selecionado. As análises são calculadas no navegador sem enviar
+dados a serviços externos de IA.
+
+Em **Registro da equipe**, registre a conclusão validada, causas e evidências,
+ações, meta, responsável, prazo e avaliação de eficácia. Clique em **Salvar
+rascunho neste navegador**. Os registros ficam no armazenamento local deste
+navegador, separados por aba e período; não são publicados nem compartilhados.
+Limpar os dados do navegador remove os rascunhos. Uma mudança da base sinaliza
+a necessidade de revisão. O recurso não oferece assinatura eletrônica ou trilha
+de auditoria institucional.
+
+**Exportar relatório (.html)** gera um arquivo com a análise automática, a base,
+o período e os campos atuais da equipe. Abra-o no navegador e use **Imprimir →
+Salvar como PDF**, se necessário. Arquive o relatório conforme o processo da
+instituição. Não insira identificadores de pacientes nos campos de texto.
+
+A referência metodológica é o capítulo QPS dos
+[padrões hospitalares JCI, 8ª edição](https://digitalassets.jointcommission.org/api/public/content/79e9f5d2cd444a1a9178ab3f9487889a?v=4d4ea7b7).
+O texto automático apoia a avaliação da equipe; não certifica conformidade.
+
+O gráfico de categorias FMS inclui **todos os status** no período selecionado,
+sem limitar a quantidade de categorias. A soma das barras corresponde ao total
+de apontamentos do recorte.
+
+Testes: `python -m unittest discover -s scripts -p 'test_*.py'` e
+`node scripts/test_analises.cjs`. Ambos também são executados antes da publicação.

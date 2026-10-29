@@ -15,6 +15,19 @@ def linha(data, status="Concluído", setor="2°C"):
 
 
 class InspecoesTests(unittest.TestCase):
+    def test_fms_inclui_concluidos_abertos_e_todas_categorias(self):
+        registros = [linha("2024-01-10"), linha("2026-01-10", "Em andamento")]
+        for i in range(22):
+            registro = linha("2026-01-10")
+            registro["Categoria por Tópico do FMS"] = f"Categoria {i}"
+            registros.append(registro)
+        resultado = painel_inspecoes(pd.DataFrame(registros))
+        for bloco in [resultado["total"], *resultado["por_ano"].values()]:
+            self.assertEqual(sum(x["total"] for x in bloco["categoria_fms"]), bloco["total"])
+            self.assertEqual(sum(x["total"] for x in bloco["categoria_fms_aberto"]), bloco["abertos"])
+        self.assertEqual(len(resultado["total"]["categoria_fms"]), 23)
+        self.assertEqual(resultado["por_ano"][2024]["categoria_fms"][0]["total"], 1)
+
     def test_anos_separados_e_series_com_zeros(self):
         resultado = painel_inspecoes(pd.DataFrame([
             linha("2024-01-10"), linha("2026-01-10", "Em andamento"),
