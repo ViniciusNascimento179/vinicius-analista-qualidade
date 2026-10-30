@@ -2,6 +2,11 @@ const test=require('node:test'), assert=require('node:assert/strict');
 const C=require('../dashboard/pdsa-core.js');
 const metric=(extra={})=>({name:'Tempo',type:'number',direction:'down',unit:'dias',target:'5',rows:[],...extra});
 const row=(date,phase,value)=>({date,phase,value:String(value)});
+test('quadro visual mantém PDSA e os registros antigos, com aprendizado e hipótese',()=>{
+ const p={name:'Projeto',aim:'Melhorar'},c={name:'Ciclo 1',study:'Análise já registrada',predictionReview:'Hipótese parcialmente confirmada',studyLearning:'Aprendizado do teste',metrics:[metric()]};
+ const html=C.board(p,c);assert.ok(html.includes('S — Estudar'));assert.ok(html.includes('Análise já registrada'));assert.ok(html.includes('Hipótese parcialmente confirmada'));assert.ok(html.includes('Aprendizado do teste'));assert.ok(!html.includes('PDCA'));
+ assert.ok(C.report(p,c).includes('Quadro visual PDSA'));
+});
 test('vazios não viram zero e não produzem melhoria fictícia',()=>{
  const a=C.calculate(metric());assert.equal(a.baseline,null);assert.equal(a.latest,null);assert.equal(a.met,null);
  assert.equal(C.value(metric(),{value:''}),null);assert.equal(C.value(metric(),{value:'0'}),0);
