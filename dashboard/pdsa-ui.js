@@ -39,6 +39,7 @@
       </div></section>`;
   }
   function render(){
+    const measuresOpen=Boolean(sec?.querySelector('#pd-visual-measures')?.open);
     sec=document.getElementById('aba-pdsa');
     if(!db.projects.some(p=>p.id===current))current=db.projects[0]?.id||'';
     let p=db.projects.find(p=>p.id===current);
@@ -58,7 +59,7 @@
       <div class="pd-fields">${input('name','Nome do indicador',m,'metric','text')}${select('kind','Tipo de medida',[['Resultado','Resultado'],['Processo','Processo'],['Equilíbrio','Equilíbrio']],m,'metric')}${select('type','Como calcular',[['number','Valor numérico (contagem, tempo ou outra unidade)'],['percent','Percentual (numerador / denominador × 100)']],m,'metric')}${input('unit','Unidade (ex.: dias, ocorrências)',m,'metric','text')}${select('direction','Direção desejada',[['down','Reduzir'],['up','Aumentar']],m,'metric')}${input('target','Meta numérica',m,'metric','number')}${input('definition','Definição, fonte dos dados, frequência e critérios de inclusão',m,'metric')}</div>
       <div id="pd-measure-form"></div><div id="pd-results"></div></section>
       <details class="painel"><summary>Método e uso do relatório</summary><p>A análise automática usa regras descritivas e não interpreta causas a partir de textos. Registre a interpretação e as evidências da equipe em “S — Estudo dos resultados e análise crítica”. O relatório reúne todos os indicadores e todos os campos do ciclo selecionado, com gráficos incorporados, e pode ser impresso em PDF.</p><p>O registro local não possui assinatura eletrônica ou trilha de auditoria institucional. Organize os relatórios e evidências conforme o processo da instituição. A ferramenta apoia a apresentação e não atesta conformidade JCI.</p><a href="https://www.ihi.org/library/tools/plan-do-study-act-pdsa-worksheet" target="_blank" rel="noopener">Referência: IHI — PDSA Worksheet</a></details>`:'<div class="painel"><h3>Comece pelo problema que deseja resolver</h3><p>Crie um projeto, descreva o objetivo e registre o primeiro teste de mudança. Depois, adicione as medições para gerar os gráficos e a análise.</p></div>'}`;
-    if(p){sec.querySelector("#pd-metrics-slot").appendChild(sec.querySelector("#pd-indicators"));review();measureForm();results();}
+    if(p){sec.querySelector("#pd-metrics-slot").appendChild(sec.querySelector("#pd-indicators"));sec.querySelector('#pd-visual-measures').open=measuresOpen;review();measureForm();results();}
     sec.oninput=e=>{
       const scope=e.target.dataset.scope,key=e.target.dataset.key;if(!scope)return;
       const {p,c,m}=selected();const obj={project:p,cycle:c,metric:m}[scope];
