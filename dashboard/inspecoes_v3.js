@@ -43,7 +43,7 @@
         <div class="painel full"><h2>Apontamentos por mês — concluídos x em andamento</h2><div class="canvas-wrap alto"><canvas id="g-iap"></canvas></div></div>
         <div class="painel"><h2>Status geral</h2><div class="canvas-wrap"><canvas id="g-ist"></canvas></div></div>
         <div class="painel"><h2>Prioridade GUT (em aberto)</h2>${B.abertos ? '' : '<p class="vazio">Nenhuma ação em aberto neste período.</p>'}<div class="canvas-wrap"><canvas id="g-ipr"></canvas></div></div>
-        <div class="painel"><h2>Atrasos por setor responsável</h2><div class="canvas-wrap alto"><canvas id="g-iat"></canvas></div></div>
+        <div class="painel"><h2>Apontamentos por setor</h2><p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Setor responsável · todas as ações concluídas e em aberto no período selecionado.</p><div class="canvas-wrap alto"><canvas id="g-iat"></canvas></div></div>
         <div class="painel"><h2>Em aberto por setor inspecionado</h2><div class="canvas-wrap alto"><canvas id="g-ise"></canvas></div></div>
         <div class="painel"><h2>Em aberto por andar</h2><p class="vazio">Andar identificado apenas quando explícito no nome do setor. Demais setores: não identificado.</p><div class="canvas-wrap"><canvas id="g-ian"></canvas></div></div>
         <div class="painel"><h2>Apontamentos por categoria FMS — todos os status</h2><p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Inclui todas as categorias, com ações concluídas e em aberto no período selecionado.</p><div class="canvas-wrap alto"><canvas id="g-icf"></canvas></div></div>
@@ -66,7 +66,7 @@
           </div>
         </div>`;
 
-      [['g-iat', B.atrasos_responsavel], ['g-ise', B.abertos_setor],
+      [['g-iat', B.apontamentos_responsavel], ['g-ise', B.abertos_setor],
        ['g-ian', B.abertos_andar], ['g-icf', B.categoria_fms]].forEach(([id, rows]) => {
         document.getElementById(id).parentElement.style.height = `${Math.max(280, rows.length * 28 + 50)}px`;
       });
@@ -90,10 +90,10 @@
         [{ data: priKeys.map(k => B.prioridade_aberto[k]),
            backgroundColor: priKeys.map(k => ({'Imediata':'#7f1d1d','Alta':'#dc2626','Moderada':'#d97706','Baixa':'#16a34a','Pendente de avaliação':'#94a3b8','Sem avaliação':'#64748b'}[k])) }]);
 
-      const at = [...B.atrasos_responsavel].sort((a,b) => b.total - a.total);
+      const at = [...B.apontamentos_responsavel].sort((a,b) => b.total - a.total);
       novoGrafico('g-iat', 'bar', at.map(x => x.setor),
-        [dsRotulo('Atrasadas', at.map(x => x.total), '#dc2626')],
-        { indexAxis: 'y', plugins: { legend: { display: false } } });
+        [dsRotulo('Apontamentos (todos os status)', at.map(x => x.total), '#2563eb')],
+        { indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { autoSkip: false } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.parsed.x} apontamentos (${B.total ? fmt(ctx.parsed.x / B.total * 100) : '0'}% do total)` } } } });
 
       const se = [...B.abertos_setor].sort((a,b) => b.total - a.total);
       novoGrafico('g-ise', 'bar', se.map(x => x.setor),

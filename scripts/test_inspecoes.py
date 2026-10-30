@@ -15,6 +15,20 @@ def linha(data, status="Concluído", setor="2°C"):
 
 
 class InspecoesTests(unittest.TestCase):
+    def test_apontamentos_responsavel_inclui_todos_status_e_anos(self):
+        registros = [linha("2024-01-10"), linha("2026-01-10", "Em andamento")]
+        for i in range(20):
+            registro = linha("2026-01-10")
+            registro["Setor Responsável"] = f"Setor {i}"
+            registros.append(registro)
+        registros[-1]["Setor Responsável"] = None
+        resultado = painel_inspecoes(pd.DataFrame(registros))
+        for bloco in [resultado["total"], *resultado["por_ano"].values()]:
+            self.assertEqual(sum(x["total"] for x in bloco["apontamentos_responsavel"]), bloco["total"])
+        self.assertEqual(resultado["por_ano"][2024]["apontamentos_responsavel"], [{"setor": "Manutenção", "total": 1}])
+        self.assertEqual(len(resultado["total"]["apontamentos_responsavel"]), 21)
+        self.assertTrue(any(x["setor"] == "Não informado" for x in resultado["total"]["apontamentos_responsavel"]))
+
     def test_fms_inclui_concluidos_abertos_e_todas_categorias(self):
         registros = [linha("2024-01-10"), linha("2026-01-10", "Em andamento")]
         for i in range(22):

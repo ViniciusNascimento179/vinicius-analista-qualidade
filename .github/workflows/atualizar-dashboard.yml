@@ -48,6 +48,8 @@ jobs:
             git commit -m "chore: atualiza dados do dashboard [skip ci]"
             git push
           fi
+      - name: Versionar arquivos para atualização do navegador
+        run: python scripts/versiona_assets.py
       - name: Publicar artefato
         uses: actions/upload-pages-artifact@v3
         with:
