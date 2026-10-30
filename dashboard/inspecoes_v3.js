@@ -56,7 +56,7 @@
             <tbody>${conclusao.map(x => `<tr><td>${escapar(x.setor)}</td><td>${fmt(x.concluidos)}</td><td>${fmt(x.abertos)}</td><td>${fmt(x.total)}</td><td>${fmt(percentual(x))}%</td></tr>`).join('')}</tbody>
           </table></div></details>
         </div>
-        <div class="painel"><h2>Em aberto por setor inspecionado</h2><div class="canvas-wrap alto"><canvas id="g-ise"></canvas></div></div>
+        <div class="painel"><h2>Achados de melhorias por setor inspecionado</h2><p class="vazio">Total de registros concluídos e em aberto no período selecionado.</p><div class="canvas-wrap alto"><canvas id="g-ise"></canvas></div></div>
         <div class="painel"><h2>Apontamentos por categoria FMS — todos os status</h2><p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Inclui todas as categorias, com ações concluídas e em aberto no período selecionado.</p><div class="canvas-wrap alto"><canvas id="g-icf"></canvas></div></div>
         <div class="painel full"><h2>Inspeções por mês (quantidade)</h2><p class="vazio">Contagem por data de registro e setor; múltiplos apontamentos da mesma visita contam uma vez.</p><div class="canvas-wrap"><canvas id="g-iim"></canvas></div></div>
         <div class="painel full"><h2>Ações em aberto de prioridade alta/imediata</h2><p class="vazio">Até 40 ações mais recentes do período.</p>
@@ -77,7 +77,7 @@
           </div>
         </div>`;
 
-      [['g-ico', conclusao], ['g-iat', B.apontamentos_responsavel], ['g-ise', B.abertos_setor],
+      [['g-ico', conclusao], ['g-iat', B.apontamentos_responsavel], ['g-ise', B.achados_setor],
        ['g-icf', B.categoria_fms]].forEach(([id, rows]) => {
         document.getElementById(id).parentElement.style.height = `${Math.max(280, rows.length * 28 + 50)}px`;
       });
@@ -106,7 +106,7 @@
         [dsRotulo('Apontamentos (todos os status)', at.map(x => x.total), '#2563eb')],
         { indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { autoSkip: false } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.parsed.x} apontamentos (${B.total ? fmt(ctx.parsed.x / B.total * 100) : '0'}% do total)` } } } });
 
-      const se = [...B.abertos_setor].sort((a,b) => b.total - a.total);
+      const se = [...B.achados_setor].sort((a,b) => b.total - a.total);
       novoGrafico('g-ico', 'bar', conclusao.map(x => x.setor), [
         {label: 'Concluídos', data: conclusao.map(percentual), backgroundColor: '#16a34a'},
         {label: 'Em aberto', data: conclusao.map(x => 100 - percentual(x)), backgroundColor: '#d97706'}
@@ -121,8 +121,8 @@
         }
       }}}});
       novoGrafico('g-ise', 'bar', se.map(x => x.setor),
-        [dsRotulo('Em aberto', se.map(x => x.total), '#2563eb')],
-        { indexAxis: 'y', plugins: { legend: { display: false } } });
+        [dsRotulo('Achados de melhorias', se.map(x => x.total), '#2563eb')],
+        { indexAxis: 'y', scales: {x: {beginAtZero: true, ticks: {precision: 0}}, y: {ticks: {autoSkip: false}}}, plugins: { legend: { display: false } } });
 
       const cf = [...B.categoria_fms].sort((a,b) => b.total - a.total);
       novoGrafico('g-icf', 'bar', cf.map(x => x.categoria),

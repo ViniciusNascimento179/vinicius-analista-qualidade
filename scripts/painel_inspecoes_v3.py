@@ -155,6 +155,8 @@ def painel_inspecoes(df: pd.DataFrame) -> dict:
 
         abertos_setor = [{"setor": s, "total": int(n)} for s, n in
                          ab["setor_canon"].fillna("Não informado").value_counts().items()]
+        achados_setor = [{"setor": s, "total": int(n)} for s, n in
+                        sub["setor_canon"].fillna("Não informado").value_counts().items()]
 
         abertos_andar = [{"andar": a, "total": int(n)} for a, n in
                          ab["andar"].value_counts().items()]
@@ -204,6 +206,7 @@ def painel_inspecoes(df: pd.DataFrame) -> dict:
             "apontamentos_responsavel": apontamentos_resp,
             "conclusao_responsavel": conclusao_resp,
             "abertos_setor": abertos_setor,
+            "achados_setor": achados_setor,
             "abertos_andar": abertos_andar,
             "prioridade_aberto": prioridade,
             "categoria_fms_aberto": cat_fms,

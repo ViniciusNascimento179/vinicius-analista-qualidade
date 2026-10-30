@@ -64,11 +64,14 @@ class InspecoesTests(unittest.TestCase):
         self.assertEqual(resultado["anos"], [2024, 2026])
         for ano in resultado["anos"]:
             bloco = resultado["por_ano"][ano]
+            self.assertEqual(sum(x["total"] for x in bloco["achados_setor"]), bloco["total"])
             serie = bloco["apontamentos_mes"]
             self.assertEqual(len(serie["labels"]), len(serie["concluidos"]))
             self.assertEqual(len(serie["labels"]), len(serie["andamento"]))
             self.assertEqual(sum(serie["concluidos"]) + sum(serie["andamento"]), bloco["total"])
         self.assertEqual(resultado["por_ano"][2024]["apontamentos_mes"]["andamento"], [0])
+        self.assertEqual(resultado["por_ano"][2024]["achados_setor"], [{"setor": "2°C", "total": 1}])
+        self.assertEqual(resultado["total"]["achados_setor"], [{"setor": "2°C", "total": 2}])
         self.assertEqual(resultado["por_ano"][2026]["apontamentos_mes"]["concluidos"], [0])
 
     def test_nao_omite_setores_abertos(self):
