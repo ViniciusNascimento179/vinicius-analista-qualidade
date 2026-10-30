@@ -3,7 +3,7 @@ from hashlib import sha256
 from pathlib import Path
 import re
 
-ASSETS = ("data.js", "inspecoes_v3.js", "analise-dados.js", "analise-ui.js", "analise.css")
+ASSETS = ("data.js", "inspecoes_v3.js", "analise-dados.js", "analise-ui.js", "analise.css", "pdsa-core.js", "pdsa-ui.js", "pdsa.css")
 
 def versionar(pasta):
     arquivo = pasta / "index.html"
@@ -19,4 +19,3 @@ def versionar(pasta):
 if __name__ == "__main__":
     versionar(Path(__file__).resolve().parents[1] / "dashboard")
     print("Recursos do dashboard versionados pelo conteúdo.")
-
