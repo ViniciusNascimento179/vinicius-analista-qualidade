@@ -56,7 +56,7 @@
             <tbody>${conclusao.map(x => `<tr><td>${escapar(x.setor)}</td><td>${fmt(x.concluidos)}</td><td>${fmt(x.abertos)}</td><td>${fmt(x.total)}</td><td>${fmt(percentual(x))}%</td></tr>`).join('')}</tbody>
           </table></div></details>
         </div>
-        <div class="painel"><h2>Achados de melhorias por setor inspecionado</h2><p class="vazio">Total de registros concluídos e em aberto no período selecionado.</p><div class="canvas-wrap alto"><canvas id="g-ise"></canvas></div></div>
+        <div class="painel full" style="min-width:0"><h2>Achados de melhorias por setor inspecionado</h2><p class="vazio">Total de registros concluídos e em aberto no período selecionado. Deslize para o lado para ver todos os setores.</p><div style="overflow-x:auto" tabindex="0" role="region" aria-label="Gráfico de achados por setor com rolagem horizontal"><div class="canvas-wrap" style="height:480px;min-width:${Math.max(700, B.achados_setor.length * 48)}px"><canvas id="g-ise"></canvas></div></div></div>
         <div class="painel"><h2>Apontamentos por categoria FMS — todos os status</h2><p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Inclui todas as categorias, com ações concluídas e em aberto no período selecionado.</p><div class="canvas-wrap alto"><canvas id="g-icf"></canvas></div></div>
         <div class="painel full"><h2>Inspeções por mês (quantidade)</h2><p class="vazio">Contagem por data de registro e setor; múltiplos apontamentos da mesma visita contam uma vez.</p><div class="canvas-wrap"><canvas id="g-iim"></canvas></div></div>
         <div class="painel full"><h2>Ações em aberto de prioridade alta/imediata</h2><p class="vazio">Até 40 ações mais recentes do período.</p>
@@ -77,7 +77,7 @@
           </div>
         </div>`;
 
-      [['g-ico', conclusao], ['g-iat', B.apontamentos_responsavel], ['g-ise', B.achados_setor],
+      [['g-ico', conclusao], ['g-iat', B.apontamentos_responsavel],
        ['g-icf', B.categoria_fms]].forEach(([id, rows]) => {
         document.getElementById(id).parentElement.style.height = `${Math.max(280, rows.length * 28 + 50)}px`;
       });
@@ -122,7 +122,7 @@
       }}}});
       novoGrafico('g-ise', 'bar', se.map(x => x.setor),
         [dsRotulo('Achados de melhorias', se.map(x => x.total), '#2563eb')],
-        { indexAxis: 'y', scales: {x: {beginAtZero: true, ticks: {precision: 0}}, y: {ticks: {autoSkip: false}}}, plugins: { legend: { display: false } } });
+        { indexAxis: 'x', scales: {x: {ticks: {autoSkip: false, minRotation: 60, maxRotation: 60}, title: {display: true, text: 'Setor inspecionado'}}, y: {beginAtZero: true, ticks: {precision: 0}, title: {display: true, text: 'Achados de melhorias'}}}, plugins: { legend: { display: false } } });
 
       const cf = [...B.categoria_fms].sort((a,b) => b.total - a.total);
       novoGrafico('g-icf', 'bar', cf.map(x => x.categoria),
