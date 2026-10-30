@@ -177,7 +177,11 @@ def painel_rounds(rounds: pd.DataFrame, detalhe: pd.DataFrame) -> dict:
     r["Ano"] = pd.to_numeric(r["Ano"], errors="coerce")
     r["Realizados"] = pd.to_numeric(r["Realizados"], errors="coerce").fillna(0)
     r["Previstos"] = pd.to_numeric(r["Previstos"], errors="coerce").fillna(0)
-    r["Pendentes"] = pd.to_numeric(r["Pendentes"], errors="coerce").fillna(0)
+    # O Excel pode gravar a fórmula sem seu resultado em cache. Recuperar a
+    # regra da aba Rounds (Previstos - Realizados), preservando valores explícitos.
+    r["Pendentes"] = pd.to_numeric(r["Pendentes"], errors="coerce").fillna(
+        r["Previstos"] - r["Realizados"]
+    )
     r["mes_n"] = r["Meses"].map(_mes_num)
     r = r.dropna(subset=["mes_n"])
     r["mes_n"] = r["mes_n"].astype(int)
