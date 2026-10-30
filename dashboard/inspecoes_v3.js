@@ -4,7 +4,7 @@
 (function(){
   const escapar = value => String(value ?? '').replace(/[&<>"']/g,
     c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
-  const graficos = ['g-iap','g-ist','g-ipr','g-iat','g-ise','g-ian','g-icf','g-iim'];
+  const graficos = ['g-iap','g-ist','g-ipr','g-iat','g-ise','g-ian','g-icf','g-iim','g-ico'];
 
   RENDER.inspecoes_v3 = function(){
     const I = DADOS.inspecoes;
@@ -30,6 +30,9 @@
       const B = (sel === 'total') ? I.total : I.por_ano[String(sel)];
       if (!B) return;
       const G = (sel === 'total') ? 'Todos os anos' : sel;
+      const conclusao = [...B.conclusao_responsavel].sort((a,b) =>
+        b.concluidos / b.total - a.concluidos / a.total || b.total - a.total || a.setor.localeCompare(b.setor));
+      const percentual = x => x.total ? x.concluidos / x.total * 100 : 0;
       // Destruir os gráficos antes de remover seus canvases do documento.
       graficos.forEach(id => { const c = Chart.getChart(id); if (c) c.destroy(); });
 
@@ -44,6 +47,15 @@
         <div class="painel"><h2>Status geral</h2><div class="canvas-wrap"><canvas id="g-ist"></canvas></div></div>
         <div class="painel"><h2>Prioridade GUT (em aberto)</h2>${B.abertos ? '' : '<p class="vazio">Nenhuma ação em aberto neste período.</p>'}<div class="canvas-wrap"><canvas id="g-ipr"></canvas></div></div>
         <div class="painel"><h2>Apontamentos por setor</h2><p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Setor responsável · todas as ações concluídas e em aberto no período selecionado.</p><div class="canvas-wrap alto"><canvas id="g-iat"></canvas></div></div>
+        <div class="painel full"><h2>Taxa de conclusão por setor responsável</h2>
+          <p class="vazio">Status atual dos apontamentos registrados no período selecionado. Considere também o volume, os prazos e a gravidade das ações.</p>
+          ${conclusao.length ? '' : '<p class="vazio">Nenhum apontamento neste período.</p>'}
+          <div class="canvas-wrap alto"><canvas id="g-ico" role="img" aria-label="Percentual de apontamentos concluídos e em aberto por setor responsável. Quantidades na tabela abaixo."></canvas></div>
+          <details><summary>Ver percentuais e quantidades por setor</summary><div style="overflow:auto"><table>
+            <thead><tr><th>Setor responsável</th><th>Concluídos</th><th>Em aberto</th><th>Total</th><th>Conclusão</th></tr></thead>
+            <tbody>${conclusao.map(x => `<tr><td>${escapar(x.setor)}</td><td>${fmt(x.concluidos)}</td><td>${fmt(x.abertos)}</td><td>${fmt(x.total)}</td><td>${fmt(percentual(x))}%</td></tr>`).join('')}</tbody>
+          </table></div></details>
+        </div>
         <div class="painel"><h2>Em aberto por setor inspecionado</h2><div class="canvas-wrap alto"><canvas id="g-ise"></canvas></div></div>
         <div class="painel"><h2>Em aberto por andar</h2><p class="vazio">Andar identificado apenas quando explícito no nome do setor. Demais setores: não identificado.</p><div class="canvas-wrap"><canvas id="g-ian"></canvas></div></div>
         <div class="painel"><h2>Apontamentos por categoria FMS — todos os status</h2><p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Inclui todas as categorias, com ações concluídas e em aberto no período selecionado.</p><div class="canvas-wrap alto"><canvas id="g-icf"></canvas></div></div>
@@ -66,7 +78,7 @@
           </div>
         </div>`;
 
-      [['g-iat', B.apontamentos_responsavel], ['g-ise', B.abertos_setor],
+      [['g-ico', conclusao], ['g-iat', B.apontamentos_responsavel], ['g-ise', B.abertos_setor],
        ['g-ian', B.abertos_andar], ['g-icf', B.categoria_fms]].forEach(([id, rows]) => {
         document.getElementById(id).parentElement.style.height = `${Math.max(280, rows.length * 28 + 50)}px`;
       });
@@ -96,6 +108,19 @@
         { indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { autoSkip: false } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.parsed.x} apontamentos (${B.total ? fmt(ctx.parsed.x / B.total * 100) : '0'}% do total)` } } } });
 
       const se = [...B.abertos_setor].sort((a,b) => b.total - a.total);
+      novoGrafico('g-ico', 'bar', conclusao.map(x => x.setor), [
+        {label: 'Concluídos', data: conclusao.map(percentual), backgroundColor: '#16a34a'},
+        {label: 'Em aberto', data: conclusao.map(x => 100 - percentual(x)), backgroundColor: '#d97706'}
+      ], {indexAxis: 'y', scales: {
+        x: {stacked: true, min: 0, max: 100, ticks: {callback: v => `${v}%`}},
+        y: {stacked: true, ticks: {autoSkip: false}}
+      }, plugins: {legend: {display: true}, tooltip: {mode: 'index', intersect: false, callbacks: {
+        label: ctx => {
+          const x = conclusao[ctx.dataIndex];
+          const n = ctx.datasetIndex === 0 ? x.concluidos : x.abertos;
+          return `${ctx.dataset.label}: ${fmt(n / x.total * 100)}% — ${fmt(n)} de ${fmt(x.total)} apontamentos`;
+        }
+      }}}});
       novoGrafico('g-ise', 'bar', se.map(x => x.setor),
         [dsRotulo('Em aberto', se.map(x => x.total), '#2563eb')],
         { indexAxis: 'y', plugins: { legend: { display: false } } });

@@ -145,6 +145,13 @@ def painel_inspecoes(df: pd.DataFrame) -> dict:
         apontamentos_resp = [{"setor": s, "total": int(n)} for s, n in
                              sub["Setor Responsável"].fillna("Não informado").astype(str).str.strip()
                              .replace("", "Não informado").value_counts().items()]
+        responsaveis = sub["Setor Responsável"].fillna("Não informado").astype(str).str.strip().replace("", "Não informado")
+        conclusao_resp = []
+        for setor, grupo in sub.groupby(responsaveis):
+            total = len(grupo)
+            concluidos = int(grupo["concluido"].sum())
+            conclusao_resp.append({"setor": setor, "total": total,
+                                   "concluidos": concluidos, "abertos": total - concluidos})
 
         abertos_setor = [{"setor": s, "total": int(n)} for s, n in
                          ab["setor_canon"].fillna("Não informado").value_counts().items()]
@@ -195,6 +202,7 @@ def painel_inspecoes(df: pd.DataFrame) -> dict:
             "status": {"Concluídos": int(len(conc)), "Em andamento": int(len(ab))},
             "atrasos_responsavel": atrasos_resp,
             "apontamentos_responsavel": apontamentos_resp,
+            "conclusao_responsavel": conclusao_resp,
             "abertos_setor": abertos_setor,
             "abertos_andar": abertos_andar,
             "prioridade_aberto": prioridade,
