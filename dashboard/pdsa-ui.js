@@ -6,7 +6,7 @@
   let db={version:1,projects:[]},loadError=false,current='',cycleId='',metricId='',editing='',unsaved=false;
   try {const raw=localStorage.getItem(KEY);if(raw){const parsed=JSON.parse(raw);if(parsed.version!==1||!Array.isArray(parsed.projects))throw Error();db=parsed;}}catch(e){loadError=true;}
   let sec;
-  function status(text){const el=sec?.querySelector('#pd-status');if(el)el.textContent=text;}
+  function status(text){sec?.querySelectorAll('#pd-status, #pd-board-save').forEach(el=>el.textContent=text);}
   function save(){
     unsaved=true;
     if(loadError){status('Não foi possível ler os registros existentes. Exporte uma cópia; o conteúdo anterior não será sobrescrito.');return;}
@@ -22,7 +22,22 @@
     return `<label class="${type==='textarea'?'pd-wide':''}" for="${name}">${E(label)}${type==='textarea'?`<textarea id="${name}" data-scope="${scope}" data-key="${key}" rows="3" maxlength="8000">${E(value)}</textarea>`:`<input id="${name}" data-scope="${scope}" data-key="${key}" type="${type}" ${type==='number'?'step="any"':''} maxlength="500" value="${E(value)}">`}</label>`;
   }
   function select(key,label,values,obj,scope){return `<label for="pd-${scope}-${key}">${E(label)}<select id="pd-${scope}-${key}" data-scope="${scope}" data-key="${key}">${values.map(([v,l])=>`<option value="${E(v)}" ${obj[key]===v?'selected':''}>${E(l)}</option>`).join('')}</select></label>`;}
-  function review(){const {p,c}=selected();const board=sec.querySelector('#pd-board');if(board)board.innerHTML=C.board(p,c);const el=sec.querySelector('#pd-review');if(el)el.textContent=c.reviewSignature===C.signature(p,c)?'Revisado pela equipe (declaração local).':'Revisão pendente: rascunho ou dados alterados desde a revisão.';}
+  function review(){const {p,c}=selected();const summary=sec.querySelector('#pd-board-metrics');if(summary)summary.textContent=c.metrics.map(m=>{const a=C.calculate(m);return `${m.name||'Indicador'}: base ${C.fmt(a.baseline)} ${a.unit}; último teste ${C.fmt(a.latest)} ${a.unit}; meta ${C.fmt(a.target)} ${a.unit}.`;}).join('\n');const el=sec.querySelector('#pd-review');if(el)el.textContent=c.reviewSignature===C.signature(p,c)?'Revisado pela equipe (declaração local).':'Revisão pendente: rascunho ou dados alterados desde a revisão.';}
+
+  function visualEditor(p,c){
+    const field=k=>{const label=C.cycleFields.find(([key])=>key===k)[1];return k==='decision'?select(k,label,[['Em estudo','Em estudo'],['Adotar','Adotar'],['Adaptar','Adaptar'],['Abandonar','Abandonar']],c,'cycle'):input(k,label,c,'cycle',['start','end','reviewDate'].includes(k)?'date':['name','reviewer'].includes(k)?'text':'textarea');};
+    const fields=keys=>keys.map(field).join('');
+    const extra=(title,keys)=>`<details class="pd-editor-extra"><summary>${E(title)}</summary><div class="pd-editor-fields">${fields(keys)}</div></details>`;
+    return `<section class="painel"><h2>Preencha diretamente no quadro PDSA</h2><p>Escreva nos campos de cada etapa. O preenchimento é salvo automaticamente neste navegador e compõe o relatório.</p><p id="pd-board-save" role="status">${unsaved?'Há alterações ainda não salvas.':'Pronto para preencher.'}</p>
+      <div class="pd-fields">${fields(['name','start','end'])}</div>
+      <div id="pd-board" class="pd-board pd-editor">
+      <article class="pd-p"><h3>P — Planejar</h3><p>Qual é o problema, o que vamos testar e o que esperamos aprender?</p><div class="pd-editor-fields">${fields(['problem'])}${input('aim','Objetivo de melhoria',p,'project')}${input('deadline','Prazo do objetivo',p,'project','date')}${fields(['plan','prediction','collection'])}</div>${extra('Observação, histórico e causas',['history','observation','causes'])}${extra('Investigar com os 5 Porquês',['why1','why2','why3','why4','why5'])}${extra('Detalhar o plano de ação 5W2H',['actionWhat','actionWhy','actionWhere','actionWhen','actionWho','actionHow','actionCost'])}</article>
+      <article class="pd-d"><h3>D — Executar</h3><p>Registre como o teste aconteceu e os desvios do planejamento.</p><div class="pd-editor-fields">${fields(['do','evidence'])}</div></article>
+      <article class="pd-s"><h3>S — Estudar</h3><p>Compare o resultado com a previsão e registre o aprendizado.</p><div id="pd-board-metrics" class="pd-editor-metrics"></div><details id="pd-visual-measures" class="pd-editor-extra"><summary>Preencher indicadores, medições e ver gráficos</summary><div id="pd-metrics-slot"></div></details><div class="pd-editor-fields">${fields(['study','predictionReview','studyLearning','effects'])}</div></article>
+      <article class="pd-a"><h3>A — Agir</h3><p>Decida o próximo passo com base no que foi aprendido.</p><div class="pd-editor-fields">${fields(['decision','act'])}</div>${extra('Padronização, conclusão e próximo ciclo',['standard','lessons','remaining'])}${extra('Revisão da equipe',['reviewer','reviewDate'])}<p id="pd-review"></p><button type="button" data-action="review">Registrar revisão da equipe</button></article>
+      <div class="pd-wheel" aria-label="Ciclo PDSA"><span>A</span><span>P</span><span>S</span><span>D</span></div>
+      </div></section>`;
+  }
   function render(){
     sec=document.getElementById('aba-pdsa');
     if(!db.projects.some(p=>p.id===current))current=db.projects[0]?.id||'';
@@ -36,16 +51,14 @@
       <div class="pd-toolbar"><button type="button" data-action="backup">Exportar cópia JSON</button><label class="pd-import">Importar cópia JSON<input id="pd-import" type="file" accept=".json,application/json"></label>${p?'<button type="button" data-action="report">Exportar relatório do ciclo</button>':''}</div>
       <p id="pd-status" role="status">${loadError?'Falha ao ler o armazenamento local. Os dados anteriores serão preservados.':db.savedAt?'Último salvamento local: '+E(new Date(db.savedAt).toLocaleString('pt-BR')):'Crie um projeto para começar. Nenhum dado de exemplo é incluído.'}</p>
       ${p?`<div class="pd-selectors"><label>Projeto<select id="pd-project">${options(db.projects,current)}</select></label><label>Ciclo<select id="pd-cycle">${options(p.cycles,cycleId)}</select></label><button type="button" data-action="new-cycle">Novo ciclo</button></div>
-      <details class="painel" open><summary>1. Projeto e objetivo</summary><div class="pd-fields">${C.fields.map(([k,l])=>input(k,l,p,'project',k==='deadline'?'date':k==='aim'?'textarea':'text')).join('')}</div></details>
+      <details class="painel" open><summary>1. Projeto e objetivo</summary><div class="pd-fields">${C.fields.filter(([k])=>!['aim','deadline'].includes(k)).map(([k,l])=>input(k,l,p,'project',k==='deadline'?'date':k==='aim'?'textarea':'text')).join('')}</div></details>
       <div class="pd-phases">${[['P','Planejar'],['D','Executar'],['S','Estudar'],['A','Agir']].map(([letter,label])=>`<span><b>${letter}</b>${label}</span>`).join('')}</div>
-      <details class="painel" open><summary>Modelo visual preenchido automaticamente</summary><div id="pd-board"></div></details>
-      <details class="painel" open><summary>2. Documentar o ciclo</summary><div class="pd-fields">${C.cycleFields.map(([k,l])=>k==='decision'?select(k,l,[['Em estudo','Em estudo'],['Adotar','Adotar'],['Adaptar','Adaptar'],['Abandonar','Abandonar']],c,'cycle'):input(k,l,c,'cycle',['start','end','reviewDate'].includes(k)?'date':['name','reviewer'].includes(k)?'text':'textarea')).join('')}</div>
-      <p id="pd-review"></p><button type="button" data-action="review">Registrar revisão da equipe</button></details>
-      <section class="painel"><h3>3. Indicadores e medições</h3><p>Use indicadores de resultado, processo e equilíbrio conforme o problema. Cada indicador possui sua própria unidade, meta e série de medições.</p><div class="pd-selectors"><label>Indicador<select id="pd-metric">${options(c.metrics,metricId)}</select></label><button type="button" data-action="new-metric">Novo indicador</button></div>
+      ${visualEditor(p,c)}
+      <section class="painel" id="pd-indicators" tabindex="-1"><h3>Indicadores e medições</h3><p>Use indicadores de resultado, processo e equilíbrio conforme o problema. Cada indicador possui sua própria unidade, meta e série de medições.</p><div class="pd-selectors"><label>Indicador<select id="pd-metric">${options(c.metrics,metricId)}</select></label><button type="button" data-action="new-metric">Novo indicador</button></div>
       <div class="pd-fields">${input('name','Nome do indicador',m,'metric','text')}${select('kind','Tipo de medida',[['Resultado','Resultado'],['Processo','Processo'],['Equilíbrio','Equilíbrio']],m,'metric')}${select('type','Como calcular',[['number','Valor numérico (contagem, tempo ou outra unidade)'],['percent','Percentual (numerador / denominador × 100)']],m,'metric')}${input('unit','Unidade (ex.: dias, ocorrências)',m,'metric','text')}${select('direction','Direção desejada',[['down','Reduzir'],['up','Aumentar']],m,'metric')}${input('target','Meta numérica',m,'metric','number')}${input('definition','Definição, fonte dos dados, frequência e critérios de inclusão',m,'metric')}</div>
       <div id="pd-measure-form"></div><div id="pd-results"></div></section>
       <details class="painel"><summary>Método e uso do relatório</summary><p>A análise automática usa regras descritivas e não interpreta causas a partir de textos. Registre a interpretação e as evidências da equipe em “S — Estudo dos resultados e análise crítica”. O relatório reúne todos os indicadores e todos os campos do ciclo selecionado, com gráficos incorporados, e pode ser impresso em PDF.</p><p>O registro local não possui assinatura eletrônica ou trilha de auditoria institucional. Organize os relatórios e evidências conforme o processo da instituição. A ferramenta apoia a apresentação e não atesta conformidade JCI.</p><a href="https://www.ihi.org/library/tools/plan-do-study-act-pdsa-worksheet" target="_blank" rel="noopener">Referência: IHI — PDSA Worksheet</a></details>`:'<div class="painel"><h3>Comece pelo problema que deseja resolver</h3><p>Crie um projeto, descreva o objetivo e registre o primeiro teste de mudança. Depois, adicione as medições para gerar os gráficos e a análise.</p></div>'}`;
-    if(p){review();measureForm();results();}
+    if(p){sec.querySelector("#pd-metrics-slot").appendChild(sec.querySelector("#pd-indicators"));review();measureForm();results();}
     sec.oninput=e=>{
       const scope=e.target.dataset.scope,key=e.target.dataset.key;if(!scope)return;
       const {p,c,m}=selected();const obj={project:p,cycle:c,metric:m}[scope];
@@ -64,6 +77,7 @@
     sec.onclick=e=>{
       const action=e.target.closest('[data-action]')?.dataset.action;if(!action)return;
       const {p,c,m}=selected();
+      if(action==='go-metrics'){const target=sec.querySelector('#pd-indicators');target.scrollIntoView({behavior:'smooth',block:'start'});target.focus({preventScroll:true});}
       if(action==='new-project'){const next={id:id(),name:'Novo projeto',cycles:[cycle()]};db.projects.push(next);current=next.id;editing='';render();save();}
       if(action==='new-cycle'){const next=cycle();next.name=`Ciclo ${p.cycles.length+1}`;next.metrics=c.metrics.map(m=>({...m,id:id(),rows:[]}));p.cycles.push(next);cycleId=next.id;editing='';render();save();}
       if(action==='new-metric'){const next=metric();c.metrics.push(next);metricId=next.id;editing='';render();save();}
