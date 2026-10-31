@@ -2,7 +2,7 @@
 import unittest
 import pandas as pd
 
-from painel_inspecoes_v3 import painel_inspecoes, _andar_do_setor
+from painel_inspecoes_v3 import painel_inspecoes, _andar_do_setor, aplicar_correcoes
 
 
 def linha(data, status="Concluído", setor="2°C"):
@@ -15,6 +15,23 @@ def linha(data, status="Concluído", setor="2°C"):
 
 
 class InspecoesTests(unittest.TestCase):
+    def test_correcao_documentada_reintegra_somente_registro_identificado(self):
+        registros = [linha('1900-01-27', setor='UCO'), linha('1900-01-27', setor='UCO')]
+        registros[0]['Ação'] = 1
+        registros[1]['Ação'] = 2
+        original = pd.DataFrame(registros)
+        ajustes = [{'acao': 1, 'setor': 'UCO', 'data_original': '1900-01-27',
+                    'data_corrigida': '2025-01-27'}]
+        corrigido = aplicar_correcoes(original, ajustes)
+        self.assertEqual(original.iloc[0]['Data_Registro'], pd.Timestamp('1900-01-27'))
+        self.assertEqual(corrigido.iloc[1]['Data_Registro'], pd.Timestamp('1900-01-27'))
+        resultado = painel_inspecoes(corrigido)
+        self.assertEqual(resultado['total']['total'], 1)
+        self.assertEqual(resultado['por_ano'][2025]['concluidos'], 1)
+        pd.testing.assert_frame_equal(aplicar_correcoes(corrigido, ajustes), corrigido)
+        corrigido.loc[0, 'Data_Registro'] = pd.Timestamp('2025-02-01')
+        pd.testing.assert_frame_equal(aplicar_correcoes(corrigido, ajustes), corrigido)
+
     def test_conclusao_por_responsavel_e_filtro_anual(self):
         registros = [linha("2024-01-10"), linha("2026-01-10", "Em andamento"), linha("2026-02-10")]
         registros[-1]["Setor Responsável"] = None
@@ -105,3 +122,4 @@ class InspecoesTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

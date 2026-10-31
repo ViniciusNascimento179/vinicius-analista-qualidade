@@ -7,6 +7,7 @@ processa_dados.py. Importa os utilitários do próprio processa_dados.
 from __future__ import annotations
 
 import re
+import json
 import sys
 from datetime import date
 from pathlib import Path
@@ -242,4 +243,26 @@ def painel_inspecoes(df: pd.DataFrame) -> dict:
 
 def calcular(abas: dict) -> dict:
     """Gera o bloco 'inspecoes' completo (total + por ano)."""
-    return painel_inspecoes(abas["Inspeção das Instalações"])
+    df = abas["Inspeção das Instalações"]
+    arquivo = Path(__file__).resolve().parents[1] / "data" / "correcoes_inspecoes.json"
+    if arquivo.exists():
+        df = aplicar_correcoes(df, json.loads(arquivo.read_text(encoding="utf-8")))
+    return painel_inspecoes(df)
+
+
+def aplicar_correcoes(df: pd.DataFrame, correcoes: list) -> pd.DataFrame:
+    """Aplica ajustes documentados sem sobrescrever a planilha original."""
+    df = df.copy()
+    for ajuste in correcoes:
+        datas = pd.to_datetime(df["Data_Registro"], errors="coerce", dayfirst=True)
+        alvo = (pd.to_numeric(df["Ação"], errors="coerce").eq(ajuste["acao"])
+                & df["Setor"].astype(str).str.strip().eq(ajuste["setor"])
+                & datas.eq(pd.Timestamp(ajuste["data_original"])))
+        if int(alvo.sum()) > 1:
+            raise ValueError("Correção de inspeção ambígua: mais de um registro corresponde ao ajuste")
+        if alvo.any():
+            df.loc[alvo, "Data_Registro"] = pd.Timestamp(ajuste["data_corrigida"])
+            print(f"[inspecoes] Correção documentada: ação {ajuste['acao']}, "
+                  f"{ajuste['data_original']} -> {ajuste['data_corrigida']}")
+    return df
+

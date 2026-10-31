@@ -1,0 +1,11 @@
+[
+  {
+    "acao": 1,
+    "setor": "UCO",
+    "data_original": "1900-01-27",
+    "data_corrigida": "2025-01-27",
+    "origem": "Data sugerida pelo responsável pelo dashboard em 31/10/2026: Acredito que seja 27/01/2025. Confirmar posteriormente na fonte.",
+    "referencia": "Inspeção das Instalações, B2 na planilha conferida. A correção usa ação, setor e data original para identificar o registro, independentemente da posição da linha."
+  }
+]
+
