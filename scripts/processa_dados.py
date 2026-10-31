@@ -57,6 +57,15 @@ def _norm(txt) -> str:
     return _sem_acento(str(txt).strip().lower())
 
 
+def _status_huddle(valor) -> str:
+    """Agrupa grafias equivalentes sem juntar situações diferentes."""
+    if pd.isna(valor):
+        return "Em andamento"
+    texto = str(valor).strip()
+    return {"em andamento": "Em andamento", "concluido": "Concluído",
+            "pendente": "Pendente"}.get(_norm(texto), texto)
+
+
 def _mes_num(v) -> int | None:
     if v is None or (isinstance(v, float) and pd.isna(v)):
         return None
@@ -273,7 +282,7 @@ def painel_huddle(planos: pd.DataFrame, follow: pd.DataFrame) -> dict:
     p = p.dropna(subset=["Data_Registro"])
     p["data"] = pd.to_datetime(p["Data_Registro"], errors="coerce", dayfirst=True)
     p = p.dropna(subset=["data"])
-    p["status"] = p["Status"].fillna("Em andamento").astype(str).str.strip()
+    p["status"] = p["Status"].map(_status_huddle)
     p["Area"] = p["Unidade"].fillna("Não informado").astype(str).str.strip()
     p["Categoria"] = p["Categoria"].fillna("Não informado").astype(str).str.strip()
     p["Ano"] = p["Ano"].fillna(p["data"].dt.year).astype(int)
@@ -296,7 +305,7 @@ def painel_huddle(planos: pd.DataFrame, follow: pd.DataFrame) -> dict:
     f = f.dropna(subset=["Data Ocorrência"])
     f["data"] = pd.to_datetime(f["Data Ocorrência"], errors="coerce", dayfirst=True)
     f = f.dropna(subset=["data"])
-    f["status"] = f["Status"].fillna("Em andamento").astype(str).str.strip()
+    f["status"] = f["Status"].map(_status_huddle)
     f["Area"] = f["Área"].fillna("Não informado").astype(str).str.strip()
     f["Categoria"] = f["Categoria"].fillna("Não informado").astype(str).str.strip()
     f["Ano"] = f["Ano"].fillna(f["data"].dt.year).astype(int)
@@ -487,3 +496,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
