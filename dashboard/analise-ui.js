@@ -63,7 +63,7 @@
     const key=chave(aba,a.filtro), assinatura=AnaliseDados.assinatura(a), r=obter(key);
     const antigo=Boolean(r.assinatura && r.assinatura!==assinatura);
     let box=sec.querySelector('.analise-critica');
-    if(!box) {box=document.createElement('section');box.className='analise-critica';(sec.querySelector('.kpis') || sec.lastElementChild).insertAdjacentElement('afterend',box);}
+    if(!box) {box=document.createElement('section');box.className='analise-critica';sec.appendChild(box);}
     box.setAttribute('aria-label',`Análise crítica — ${a.titulo}`);
     box.innerHTML=`<div class="ac-cabecalho"><div><span class="ac-selo">Análise crítica</span><h2>${esc(a.titulo)} · ${esc(a.periodo)}</h2></div><button type="button" class="ac-exportar">Exportar relatório (.html)</button></div>
       <p class="ac-subtitulo">Base processada em ${esc(a.base)} · Texto automático para validação pela equipe.</p>
