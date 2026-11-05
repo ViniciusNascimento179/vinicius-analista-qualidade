@@ -3,7 +3,7 @@ from hashlib import sha256
 from pathlib import Path
 import re
 
-ASSETS = ("data.js", "inspecoes_v3.js", "analise-dados.js", "analise-ui.js", "analise.css", "pdsa-core.js", "pdsa-ui.js", "pdsa.css")
+ASSETS = ("data.js", "inspecoes_v3.js", "analise-dados.js", "analise-ui.js", "analise.css", "pdsa-core.js", "pdsa-ui.js", "pdsa.css", "sip-cme-dados.js", "sip-cme.js", "sip-cme.css")
 
 def versionar(pasta):
     arquivo = pasta / "index.html"
