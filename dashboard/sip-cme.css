@@ -1,0 +1,21 @@
+#aba-sip-cme .sip-titulo { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin:0 0 18px; }
+#aba-sip-cme .sip-titulo h2 { color:var(--brand); font-size:1.3rem; margin-bottom:5px; }
+#aba-sip-cme .sip-titulo p, #aba-sip-cme .sip-nota, #aba-sip-cme .sip-fonte { color:var(--muted); font-size:.85rem; line-height:1.6; }
+#aba-sip-cme .sip-pendente { padding:8px 12px; border:1px solid #fcd34d; border-radius:8px; background:#fffbeb; color:#92400e; font-size:.8rem; }
+#aba-sip-cme .sip-filtros { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:18px; font-size:.88rem; }
+#aba-sip-cme .sip-filtros label { font-weight:600; }
+#aba-sip-cme select { padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); font:inherit; }
+#aba-sip-cme select:focus-visible, #aba-sip-cme summary:focus-visible { outline:3px solid #2563eb; outline-offset:3px; }
+#aba-sip-cme .sip-grade { grid-template-columns:repeat(2,minmax(0,1fr)); }
+#aba-sip-cme .painel { min-width:0; }
+#aba-sip-cme .sip-nota { margin-bottom:12px; }
+#aba-sip-cme .sip-tabela { overflow-x:auto; }
+#aba-sip-cme table { line-height:1.5; }
+#aba-sip-cme caption { text-align:left; font-size:.8rem; padding:0 0 8px; color:var(--muted); }
+#aba-sip-cme th[scope=row] { position:static; background:transparent; color:var(--ink); font-weight:500; }
+#aba-sip-cme .sip-fonte { margin:16px 0; overflow-wrap:anywhere; }
+#aba-sip-cme .sip-paragrafo { margin:12px 0; line-height:1.7; }
+#aba-sip-cme summary { cursor:pointer; font-weight:600; color:var(--brand); padding:5px 0; }
+#aba-sip-cme .ac-limites li { line-height:1.6; margin:8px 0; }
+@media(max-width:800px) { #aba-sip-cme .sip-grade { grid-template-columns:minmax(0,1fr); } }
+@media(max-width:600px) { #aba-sip-cme .kpis { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } #aba-sip-cme .kpi { padding:12px; } #aba-sip-cme .kpi .valor { font-size:1.6rem; } #aba-sip-cme .sip-tabela table { min-width:540px; } }
