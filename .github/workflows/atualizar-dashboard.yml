@@ -37,7 +37,9 @@ jobs:
           python -m unittest discover -s scripts -p 'test_*.py'
           python scripts/processa_dados.py
       - name: Validar análises críticas e categorias FMS
-        run: node scripts/test_analises.cjs
+        run: |
+          node scripts/test_analises.cjs
+          node scripts/test_sip_cme.cjs
       - name: Validar cálculos e relatório PDSA
         run: node scripts/test_pdsa.cjs
       - name: Commit dos dados gerados
