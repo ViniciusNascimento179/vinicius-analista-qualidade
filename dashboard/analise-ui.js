@@ -16,24 +16,25 @@
   ];
   const estados={'rascunho':'Rascunho','em-revisao':'Em revisão','revisado':'Revisado pela equipe (declarado)'};
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const lista=xs=>`<ul>${xs.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`;
+  const lista=(xs,campo)=>`<ul ${campo?`data-ac-edit="${campo}" data-ac-tipo="lista" aria-label="${esc({achados:'Achados nos dados',interpretacao:'Interpretação crítica',acoes:'Ações sugeridas',acompanhamento:'Como acompanhar',limites:'Limitações e qualidade dos dados'}[campo])}"`:''}>${xs.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`;
   function corpo(a) {
-    return `<p class="ac-resumo">${esc(a.resumo)}</p><div class="ac-colunas">
-      <div><h3>Achados nos dados</h3>${lista(a.achados)}</div>
-      <div><h3>Interpretação crítica</h3>${lista(a.interpretacao)}</div>
-      <div><h3>Ações sugeridas para discussão</h3>${lista(a.acoes)}</div>
-      <div><h3>Como acompanhar</h3>${lista(a.acompanhamento)}</div>
-      </div><details class="ac-limites"><summary>Limitações e qualidade dos dados</summary>${lista(a.limites)}</details>`;
+    return `<p class="ac-resumo" data-ac-edit="resumo" aria-label="Resumo da análise crítica">${esc(a.resumo)}</p><div class="ac-colunas">
+      <div><h3>Achados nos dados</h3>${lista(a.achados,'achados')}</div>
+      <div><h3>Interpretação crítica</h3>${lista(a.interpretacao,'interpretacao')}</div>
+      <div><h3>Ações sugeridas para discussão</h3>${lista(a.acoes,'acoes')}</div>
+      <div><h3>Como acompanhar</h3>${lista(a.acompanhamento,'acompanhamento')}</div>
+      </div><details class="ac-limites"><summary>Limitações e qualidade dos dados</summary>${lista(a.limites,'limites')}</details>`;
   }
-  function relatorio(a,r,desatualizado=false) {
+  function relatorio(a,r,desatualizado=false,edicao=null) {
     const fields=r?.fields || {};
     const revisaoIncompleta=fields.estado==='revisado' && (!fields.analista?.trim() || !fields.dataAnalise || !fields.conclusao?.trim());
     return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Análise crítica — ${esc(a.titulo)}</title><style>
       body{font:15px/1.6 Arial,sans-serif;color:#172b44;max-width:960px;margin:32px auto;padding:24px}h1{font-size:26px}h2{margin-top:28px;border-bottom:1px solid #ccd6e2}h3{font-size:16px}li{margin:8px 0}dt{font-weight:bold;margin-top:16px}dd{margin:4px 0;white-space:pre-wrap;overflow-wrap:anywhere}.nota{background:#f0f5fa;padding:14px}summary{font-weight:bold}details{display:block}details>ul{display:block}a{overflow-wrap:anywhere}@media print{body{margin:0;max-width:none}h2,h3,dt{break-after:avoid}li,dd{break-inside:avoid}}
       </style></head><body><h1>Análise crítica — ${esc(a.titulo)}</h1>
       <p><strong>Período:</strong> ${esc(a.periodo)}<br><strong>Base processada em:</strong> ${esc(a.base)}<br><strong>Relatório exportado em:</strong> ${esc(new Date().toLocaleString('pt-BR'))}</p>
-      <p class="nota">Análise automática descritiva, sujeita à validação da equipe. O registro local não possui assinatura eletrônica ou histórico de auditoria institucional.</p>
-      <h2>Análise automática</h2>${corpo(a).replace('<details class="ac-limites">','<details class="ac-limites" open>')}
+      <p class="nota">${edicao?.manual?'Texto da análise editado pela equipe. O relatório inclui o texto atual, inclusive alterações ainda não publicadas, quando houver.':'Análise automática descritiva, sujeita à validação da equipe.'} O registro local não possui assinatura eletrônica ou histórico de auditoria institucional.</p>
+      ${edicao?.baseAlterada?'<p class="nota">Os dados do painel mudaram desde a publicação desta análise. O texto manual precisa ser revisado.</p>':''}
+      <h2>${edicao?.manual?'Texto da análise crítica':'Análise automática'}</h2>${corpo(a).replace('<details class="ac-limites">','<details class="ac-limites" open>')}
       <h2>Registro da equipe</h2>
       <p><strong>Situação:</strong> ${desatualizado?'Revisão pendente — a base mudou desde o registro':revisaoIncompleta?'Rascunho — identificação da revisão incompleta':esc(estados[fields.estado] || estados.rascunho)}</p>
       ${desatualizado?`<p class="nota">O registro da equipe se refere à base de ${esc(r?.base || 'data não informada')}. A análise automática acima usa a base atual; revisar a conclusão antes de utilizá-la.</p>`:''}
@@ -78,6 +79,7 @@
         <div><label for="ac-${aba}-estado">Situação do registro</label><select id="ac-${aba}-estado" name="estado">${Object.entries(estados).map(([value,label])=>`<option value="${value}" ${r.fields.estado===value?'selected':''}>${label}</option>`).join('')}</select></div></div>
         <div class="ac-rodape-form"><button type="submit">Salvar rascunho neste navegador</button><p class="ac-salvamento" role="status">${r.dirty?'Alterações ainda não salvas.':r.savedAt?`Salvo localmente em ${esc(new Date(r.savedAt).toLocaleString('pt-BR'))}.`:'Nenhum registro salvo neste recorte.'}</p></div></form>
       </details><details class="ac-metodo"><summary>Método e referência JCI</summary><p>Cálculos descritivos sobre os dados dos gráficos. Metas e causas devem ser confirmadas pela equipe; não há decisão automática de conformidade.</p><p><a href="${fonte}" target="_blank" rel="noopener noreferrer">Padrões hospitalares JCI, 8ª edição — QPS.03.00–QPS.03.04 e QPS.04.00</a>. Apoio à análise e documentação; não substitui a avaliação institucional nem atesta acreditação.</p></details>`;
+    const editor=typeof AnaliseEditor!=='undefined'?AnaliseEditor.montar({box,aba,filtro:a.filtro,base:assinatura}):null;
     const form=box.querySelector('form'), message=box.querySelector('.ac-salvamento');
     form.addEventListener('input',()=>{r.fields=Object.fromEntries(new FormData(form));r.dirty=true;message.textContent='Alterações ainda não salvas. Salve ou exporte antes de fechar o navegador.';});
     form.addEventListener('submit',e=>{
@@ -89,7 +91,8 @@
     });
     box.querySelector('.ac-exportar').addEventListener('click',()=>{
       r.fields=Object.fromEntries(new FormData(form));
-      const html=relatorio(a,r,Boolean(r.assinatura && r.assinatura!==assinatura));
+      const edicao=editor?.atual();
+      const html=relatorio({...a,...edicao?.campos},r,Boolean(r.assinatura && r.assinatura!==assinatura),edicao);
       const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
       const link=document.createElement('a');link.href=url;link.download=`analise-critica-${aba}-${a.filtro}.html`;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
       message.textContent='Relatório exportado com os campos atuais. Abra o arquivo e use Imprimir para salvar em PDF.';
