@@ -9,6 +9,11 @@ on:
       - "requirements.txt"
       - ".github/workflows/atualizar-dashboard.yml"
   workflow_dispatch:
+    inputs:
+      reprocessar_planilha:
+        description: "Reprocessar a planilha armazenada no repositório (pode ser antiga)"
+        type: boolean
+        default: false
 permissions:
   contents: write
   pages: write
@@ -22,6 +27,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Identificar mudança na fonte do repositório
+        id: fonte
+        env:
+          EVENTO: ${{ github.event_name }}
+          ANTES: ${{ github.event.before }}
+          REPROCESSAR: ${{ inputs.reprocessar_planilha }}
+        run: |
+          processar=false
+          if [ "$EVENTO" = "workflow_dispatch" ]; then
+            if [ "$REPROCESSAR" = "true" ]; then processar=true; fi
+          elif [ "$EVENTO" = "push" ]; then
+            if [ "$ANTES" = "0000000000000000000000000000000000000000" ]; then
+              processar=true
+            else
+              mudancas=$(git diff --name-only "$ANTES" "$GITHUB_SHA" -- data/)
+              if [ -n "$mudancas" ]; then processar=true; fi
+            fi
+          fi
+          echo "processar=$processar" >> "$GITHUB_OUTPUT"
       - name: Python
         uses: actions/setup-python@v5
         with:
@@ -32,10 +58,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Processar planilha
-        run: |
-          python -m unittest discover -s scripts -p 'test_*.py'
-          python scripts/processa_dados.py
+      - name: Validar processamento
+        run: python -m unittest discover -s scripts -p 'test_*.py'
+      - name: Processar planilha do repositório quando alterada
+        if: steps.fonte.outputs.processar == 'true'
+        run: python scripts/processa_dados.py
       - name: Validar análises críticas e categorias FMS
         run: |
           node scripts/test_analises.cjs

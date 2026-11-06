@@ -26,6 +26,7 @@ Regras gerais:
 from __future__ import annotations
 
 import json
+import argparse
 import unicodedata
 from datetime import date, datetime
 from pathlib import Path
@@ -475,6 +476,16 @@ def main():
     }
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
+    if OUT.exists():
+        anterior = json.loads(OUT.read_text(encoding="utf-8")
+                              .removeprefix("const DADOS = ").strip().removesuffix(";"))
+        # O JSON converte chaves de ano para texto; compare na mesma representação.
+        indicadores = json.loads(json.dumps(dados, ensure_ascii=False))
+        anterior.pop("gerado_em", None)
+        indicadores.pop("gerado_em", None)
+        if anterior == indicadores:
+            print("[ok] Indicadores sem alterações; data de atualização preservada.")
+            return
     tmp = OUT.with_suffix(".js.tmp")
     tmp.write_text("const DADOS = " + json.dumps(dados, ensure_ascii=False) + ";\n",
                    encoding="utf-8")
@@ -495,5 +506,14 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--fonte", type=Path, help="Planilha local; o original não é copiado para o repositório")
+    args = parser.parse_args()
+    if args.fonte:
+        fonte = args.fonte.resolve(strict=True)
+        if fonte.suffix.lower() != ".xlsx":
+            parser.error("A fonte local deve ser uma planilha .xlsx")
+        DATA_DIR = fonte.parent
+        FONTES = [fonte.name]
     main()
 

@@ -13,12 +13,31 @@ Site público com **6 painéis integrados** da Qualidade do Hospital Vera Cruz, 
 
 **Site:** https://viniciusnascimento179.github.io/vinicius-analista-qualidade/
 
-## Como atualizar (ritual mensal)
+## Atualização diária por pasta local
 
-1. Baixe a planilha nova (Power BI) e salve como `planos_de_acao_qualidade.xlsx`
-2. No GitHub, entre em **Add file → Upload files** e suba o arquivo **na pasta `data/`** (substituindo o antigo)
-3. Commit — o workflow **"Atualizar dashboard"** roda sozinho e publica o site novo em ~2 minutos
-4. Acompanhe em **Actions**; se quiser forçar, **Actions → Atualizar dashboard → Run workflow**
+A tarefa recorrente no Codex consulta a pasta **Dados dos Painéis** na Área de
+Trabalho todos os dias às **8h (horário de Brasília)**. O computador precisa estar
+ligado e o Codex aberto. Substitua a planilha principal diariamente, mantendo
+apenas uma versão atual. A fonte do SIP/CME é uma planilha separada; quando ela
+não estiver disponível, os dados já publicados desse painel são preservados.
+
+O processamento local aceita o caminho do arquivo, sem copiar o original para
+o repositório:
+
+```bash
+python scripts/processa_dados.py --fonte "caminho/planilha.xlsx"
+```
+
+Valide os resultados e os testes antes de publicar os dados gerados em
+`dashboard/data.js`. Não envie as planilhas originais para o repositório público.
+Se os indicadores não mudarem, o processamento preserva a data de atualização.
+
+O workflow **Atualizar dashboard** valida e publica os dados processados.
+Alterações apenas no dashboard ou nos scripts não reprocessam a planilha antiga
+do repositório. O reprocessamento dessa base ocorre somente se `data/` mudar ou
+se a opção **Reprocessar a planilha armazenada no repositório** for marcada em
+**Actions → Atualizar dashboard → Run workflow**. Deixe essa opção desmarcada
+para republicar os dados mais recentes processados localmente.
 
 ## Privacidade (Watcher)
 
