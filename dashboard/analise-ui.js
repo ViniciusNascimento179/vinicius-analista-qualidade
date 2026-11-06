@@ -79,7 +79,9 @@
         <div><label for="ac-${aba}-estado">Situação do registro</label><select id="ac-${aba}-estado" name="estado">${Object.entries(estados).map(([value,label])=>`<option value="${value}" ${r.fields.estado===value?'selected':''}>${label}</option>`).join('')}</select></div></div>
         <div class="ac-rodape-form"><button type="submit">Salvar rascunho neste navegador</button><p class="ac-salvamento" role="status">${r.dirty?'Alterações ainda não salvas.':r.savedAt?`Salvo localmente em ${esc(new Date(r.savedAt).toLocaleString('pt-BR'))}.`:'Nenhum registro salvo neste recorte.'}</p></div></form>
       </details><details class="ac-metodo"><summary>Método e referência JCI</summary><p>Cálculos descritivos sobre os dados dos gráficos. Metas e causas devem ser confirmadas pela equipe; não há decisão automática de conformidade.</p><p><a href="${fonte}" target="_blank" rel="noopener noreferrer">Padrões hospitalares JCI, 8ª edição — QPS.03.00–QPS.03.04 e QPS.04.00</a>. Apoio à análise e documentação; não substitui a avaliação institucional nem atesta acreditação.</p></details>`;
-    const editor=typeof AnaliseEditor!=='undefined'?AnaliseEditor.montar({box,aba,filtro:a.filtro,base:assinatura}):null;
+    // Publicar reprocessa o site; a data de geração sozinha não torna o texto desatualizado.
+    const basePublicacao=AnaliseDados.assinatura({...a,base:null});
+    const editor=typeof AnaliseEditor!=='undefined'?AnaliseEditor.montar({box,aba,filtro:a.filtro,base:basePublicacao}):null;
     const form=box.querySelector('form'), message=box.querySelector('.ac-salvamento');
     form.addEventListener('input',()=>{r.fields=Object.fromEntries(new FormData(form));r.dirty=true;message.textContent='Alterações ainda não salvas. Salve ou exporte antes de fechar o navegador.';});
     form.addEventListener('submit',e=>{
