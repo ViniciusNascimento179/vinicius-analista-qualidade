@@ -40,6 +40,7 @@ jobs:
         run: |
           node scripts/test_analises.cjs
           node scripts/test_sip_cme.cjs
+          node scripts/test_analise_editor.cjs
       - name: Validar cálculos e relatório PDSA
         run: node scripts/test_pdsa.cjs
       - name: Commit dos dados gerados
