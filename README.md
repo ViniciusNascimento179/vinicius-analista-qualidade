@@ -23,7 +23,7 @@ pode ser incluído no gráfico. A análise crítica acompanha os filtros e fica 
 Atualize a fonte separada localmente, sem adicionar o arquivo original ao GitHub:
 
 ```bash
-python scripts/importa_ouvidoria.py --fonte "caminho/Nova Planilha Ouvidoria Oficial 1 2026.xlsx"
+python scripts/importa_ouvidoria.py --fonte "caminho/Nova Planilha Ouvidoria Oficial 1 2026.xlsx" --historico "caminho/OUVIDORIA 2022_23_24_25  OFICIAL (3).xlsx"
 python -m unittest discover -s scripts -p 'test_*.py'
 node scripts/test_ouvidoria.cjs
 python scripts/versiona_assets.py
@@ -36,6 +36,21 @@ como “Motivo não padronizado”. Campos vazios permanecem “Não informado�
 Cada linha preenchida conta como um registro; BO repetido não é deduplicado.
 O ano vem da data de abertura, mesmo quando difere do nome da aba. A atualização
 da planilha principal preserva esta base independente da Ouvidoria.
+
+O histórico contém registros de 2024 e 2025 e uma parte de 2026 já presente na
+fonte atual. A mescla confere BO e paciente localmente, consumindo cada
+correspondência uma vez. A fonte atual prevalece, inclusive em status e datas.
+Não há deduplicação apenas por número de BO. Identificadores não são exportados.
+Seis registros sem data de abertura permanecem em “Sem data”. Não atribuir
+o ano pelo título da aba: “BOLETINS 2025” também contém dados de 2024.
+
+Setores históricos usam o de-para da planilha atual e equivalências exatas
+documentadas em `scripts/ouvidoria_historico.py`. Setores sem correspondência
+segura são “Setor não padronizado”. Motivos genéricos antigos são preservados
+como categorias históricas quando houver uma correspondência exata revisada;
+relatos livres não são publicados nem classificados por suposição. Campos
+ausentes permanecem “Não informado”. Reexecute sempre com as duas fontes;
+o importador impede remover o histórico inadvertidamente ao omitir a opção.
 
 ## Atualização diária por pasta local
 

@@ -3,6 +3,7 @@ import unittest
 from datetime import datetime
 
 from importa_ouvidoria import agregar
+from ouvidoria_historico import mesclar, mapas, chave, ler
 
 
 class OuvidoriaTest(unittest.TestCase):
@@ -50,6 +51,52 @@ class OuvidoriaTest(unittest.TestCase):
         self.assertEqual(len(b['grupos']), 1)
         self.assertEqual(b['grupos'][0]['n'], 2)
         self.assertIn('Setor B', b['setores'])
+
+    def test_historico_preserva_fonte_atual_e_sua_data(self):
+        atual = self.row(Paciente='Pessoa teste')
+        antigo = self.row(Paciente='Pessoa teste', Status='Em andamento', **{'Data Abertura': datetime(2025, 1, 1)})
+        rows, iguais, novos = mesclar([atual], [antigo])
+        self.assertEqual((iguais, len(novos)), (1, 0))
+        self.assertEqual(rows, [atual])
+
+    def test_mesmo_bo_outro_paciente_nao_e_excluido(self):
+        atual = self.row(Paciente='Pessoa teste')
+        outro = self.row(Paciente='Outra pessoa')
+        rows, iguais, novos = mesclar([atual], [outro])
+        self.assertEqual((len(rows), iguais, len(novos)), (2, 0, 1))
+
+    def test_correspondencia_consumida_uma_vez_por_manifestacao(self):
+        atual = self.row(Paciente='Pessoa teste')
+        outra = self.row(Paciente='Pessoa teste', Tipo='Elogio')
+        rows, iguais, novos = mesclar([atual], [atual.copy(), outra])
+        self.assertEqual((iguais, len(novos), len(rows)), (1, 1, 2))
+        self.assertEqual(novos[0]['Tipo'], 'Elogio')
+
+    def test_ausencia_de_identificador_nao_deduplica(self):
+        atual = self.row(Paciente=None)
+        rows, iguais, novos = mesclar([atual], [atual.copy()])
+        self.assertEqual((iguais, len(novos)), (0, 1))
+
+    def test_depara_ambiguo_ou_vazio_nao_inventa_setor(self):
+        sm, mm = mapas(['Setor A'], ['Demora'], [('-', 'Setor A'), ('Ambíguo', 'Setor A'), ('Ambíguo', 'Setor B')])
+        self.assertNotIn('', sm)
+        self.assertNotIn(chave('Ambíguo'), sm)
+        self.assertEqual(sm[chave('setor a')], 'Setor A')
+
+    def test_layout_antigo_campos_vazios_relato_livre_e_ano_real(self):
+        class Sheet:
+            title = 'BOLETINS 2025'
+            def iter_rows(self, **kwargs):
+                return iter([(10,), ('Nº BO', 'DATA ABERTURA ', 'PACIENTE', 'TIPO', 'SETOR', 'MOTIVO DO BOLETIM', 'STATUS'),
+                             (1, datetime(2024, 1, 1), 'Pessoa privada', 'Solciitação', None, None, 'Concluido'),
+                             (2, None, 'Outra pessoa', 'Queixa', 'Nome privado', 'Relato confidencial', None)])
+        rows, abas = ler([Sheet()], {}, {})
+        self.assertIsNone(rows[0]['Setor'])
+        self.assertEqual(rows[0]['Tipo'], 'Solicitação')
+        self.assertEqual(rows[0]['Data Abertura'].year, 2024)
+        self.assertEqual(rows[1]['Setor'], 'Setor não padronizado')
+        self.assertEqual(rows[1]['Motivo Padronizado'], 'Motivo não padronizado')
+        self.assertEqual(abas, ['BOLETINS 2025'])
 
 
 if __name__ == '__main__':

@@ -95,7 +95,7 @@ def agregar(rows, setores, motivos, tipos, status):
     }
 
 
-def importar(caminho):
+def importar(caminho, historicos=()):
     book = openpyxl.load_workbook(caminho, read_only=True, data_only=True)
     try:
         listas = list(book["Listas"].values)
@@ -128,10 +128,39 @@ def importar(caminho):
             abas.append(sheet.title)
         if not abas:
             raise ValueError("Nenhuma aba de registros encontrada.")
+        fontes = [Path(caminho).name]
+        repetidos = 0
+        adicionados = 0
+        resumo_historico = []
+        if historicos:
+            from ouvidoria_historico import mapas, ler, mesclar
+            depara = list(book['De-Para Setores'].values)[1:]
+            setor_map, motivo_map = mapas(setores, motivos, depara)
+            for fonte in historicos:
+                hist_book = openpyxl.load_workbook(fonte, read_only=True, data_only=True)
+                try:
+                    hist_rows, hist_abas = ler(hist_book, setor_map, motivo_map)
+                finally:
+                    hist_book.close()
+                registros, duplicados, adicionais = mesclar(registros, hist_rows)
+                repetidos += duplicados
+                adicionados += len(adicionais)
+                resumo_historico.append({'fonte': Path(fonte).name, 'lidos': len(hist_rows),
+                                        'ja_presentes': duplicados, 'adicionados': len(adicionais)})
+                fontes.append(Path(fonte).name)
+                abas.extend(hist_abas)
+            setores += sorted(set(setor_map.values()), key=chave) + ['Setor não padronizado']
+            motivos += sorted(set(motivo_map.values()), key=chave) + ['Motivo não padronizado']
+            tipos += ['Sugestão', 'Sinalização', 'Projeto', 'Registro']
         result = agregar(registros, setores, motivos, tipos, status)
+        if historicos:
+            result['qualidade']['registros_historicos_ja_presentes'] = repetidos
+            result['qualidade']['registros_historicos_adicionados'] = adicionados
+            result['historico'] = resumo_historico
         if not result["total"]:
             raise ValueError("A fonte não contém registros. A base anterior foi preservada.")
-        result["fonte"] = Path(caminho).name
+        result["fonte"] = ' + '.join(fontes)
+        result['fontes'] = fontes
         result["abas"] = abas
         return result
     finally:
@@ -141,9 +170,15 @@ def importar(caminho):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fonte", type=Path, required=True)
+    parser.add_argument("--historico", type=Path, action='append', default=[],
+                        help='Planilha histórica a mesclar; pode ser repetido. A fonte atual prevalece.')
     parser.add_argument("--saida", type=Path, default=ROOT / "dashboard" / "ouvidoria-dados.js")
     args = parser.parse_args()
-    result = importar(args.fonte)
+    if args.saida.exists() and not args.historico:
+        anterior = json.loads(args.saida.read_text(encoding='utf-8').split('=', 1)[1].strip().rstrip(';'))
+        if anterior.get('historico'):
+            parser.error('Esta base já contém histórico. Informe também --historico para preservar os anos anteriores.')
+    result = importar(args.fonte, args.historico)
     payload = "window.OuvidoriaDados = " + json.dumps(result, ensure_ascii=False, separators=(",", ":")) + ";\n"
     args.saida.parent.mkdir(parents=True, exist_ok=True)
     args.saida.write_text(payload, encoding="utf-8")
