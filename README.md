@@ -13,6 +13,30 @@ Site público com **6 painéis integrados** da Qualidade do Hospital Vera Cruz, 
 
 **Site:** https://viniciusnascimento179.github.io/vinicius-analista-qualidade/
 
+## Ouvidoria
+
+A aba Ouvidoria permite filtrar ano de abertura, setor, tipo e status. Mostra
+conclusões, elogios, queixas, solicitações, todos os setores com registros em
+barras horizontais e os principais motivos. O catálogo de setores sem registros
+pode ser incluído no gráfico. A análise crítica acompanha os filtros e fica ao final.
+
+Atualize a fonte separada localmente, sem adicionar o arquivo original ao GitHub:
+
+```bash
+python scripts/importa_ouvidoria.py --fonte "caminho/Nova Planilha Ouvidoria Oficial 1 2026.xlsx"
+python -m unittest discover -s scripts -p 'test_*.py'
+node scripts/test_ouvidoria.cjs
+python scripts/versiona_assets.py
+```
+
+O arquivo `dashboard/ouvidoria-dados.js` contém somente contagens por ano/mês,
+setor, tipo, status e motivo. Pacientes, responsáveis nominais, números de BO,
+descrições e observações são excluídos. Motivos fora do catálogo são agrupados
+como “Motivo não padronizado”. Campos vazios permanecem “Não informado”.
+Cada linha preenchida conta como um registro; BO repetido não é deduplicado.
+O ano vem da data de abertura, mesmo quando difere do nome da aba. A atualização
+da planilha principal preserva esta base independente da Ouvidoria.
+
 ## Atualização diária por pasta local
 
 A tarefa recorrente no Codex consulta a pasta **Dados dos Painéis** na Área de

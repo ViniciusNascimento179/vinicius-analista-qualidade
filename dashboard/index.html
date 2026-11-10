@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vinicius Analista Qualidade — Dashboard Integrado da Qualidade</title>
-<link rel="stylesheet" href="pdsa.css?v=ba9d500587f9ce45">
-<link rel="stylesheet" href="sip-cme.css?v=964220fc70cf3303">
-<link rel="stylesheet" href="analise.css?v=e4b90b5a5c6795a5">
+<link rel="stylesheet" href="pdsa.css?v=d5662f9fa8c53108">
+<link rel="stylesheet" href="sip-cme.css?v=5dd73fa1e0422d49">
+<link rel="stylesheet" href="ouvidoria.css?v=d52713a6e8a4dd7d">
+<link rel="stylesheet" href="analise.css?v=90801ef66afb922e">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   :root {
@@ -92,6 +93,7 @@
   <button data-aba="watcher">🛏️ Watcher</button>
   <button data-aba="jci">📋 JCI + Comitês</button>
   <button data-aba="sip-cme">🏥 SIP — CME</button>
+  <button data-aba="ouvidoria">💬 Ouvidoria</button>
   <button data-aba="pdsa">🧪 PDSA</button>
 </nav>
 
@@ -103,6 +105,7 @@
   <section id="aba-watcher" class="aba"></section>
   <section id="aba-jci" class="aba"></section>
   <section id="aba-sip-cme" class="aba"></section>
+  <section id="aba-ouvidoria" class="aba"></section>
   <section id="aba-pdsa" class="aba"></section>
 </main>
 
@@ -110,7 +113,7 @@
   Fonte: Planos de Ação da Qualidade (Power BI) · Pipeline Python/pandas · Publicado via GitHub Pages
 </footer>
 
-<script src="data.js?v=49664b5dfbcb578b"></script>
+<script src="data.js?v=384e493811daf4f8"></script>
 <script>
 /* ============================== utilidades ============================== */
 const fmt = n => Number(n).toLocaleString('pt-BR');
@@ -196,6 +199,7 @@ RENDER.visao = function(){
       <div class="atalho" onclick="irPara('huddle')"><div class="icone">📢</div><div class="nome">Huddle</div><div class="desc">Planos de ação e follow-up de problemas</div></div>
       <div class="atalho" onclick="irPara('watcher')"><div class="icone">🛏️</div><div class="nome">Watcher</div><div class="desc">Pacientes vigilados — dados anonimizados</div></div>
       <div class="atalho" onclick="irPara('sip-cme')"><div class="icone">🏥</div><div class="nome">SIP — CME</div><div class="desc">Auditorias de pass-through, acessos, articulados e pressões</div></div>
+      <div class="atalho" onclick="irPara('ouvidoria')"><div class="icone">💬</div><div class="nome">Ouvidoria</div><div class="desc">Elogios, queixas, solicitações, conclusão e motivos por setor</div></div>
       <div class="atalho" onclick="irPara('jci')"><div class="icone">📋</div><div class="nome">JCI + Comitês</div><div class="desc">Conformidade por capítulo e planos de comitê</div></div>
     </div>
 
@@ -487,14 +491,16 @@ RENDER.jci = function(){
 };
 
 </script>
-<script src="inspecoes_v3.js?v=c0d343c61d077097"></script>
-<script src="analise-dados.js?v=49d55631a0edd702"></script>
-<script src="analise-editor.js?v=1db84334bad83590"></script>
-<script src="analise-ui.js?v=a575ec42ec669543"></script>
-<script src="pdsa-core.js?v=a345eb69c7597768"></script>
-<script src="pdsa-ui.js?v=d9a4d85a5d9ac830"></script>
-<script src="sip-cme-dados.js?v=ed59873e405df311"></script>
-<script src="sip-cme.js?v=354d38538ab1ae06"></script>
+<script src="inspecoes_v3.js?v=2404b50bb826d9dd"></script>
+<script src="analise-dados.js?v=b080e94d904d6731"></script>
+<script src="analise-editor.js?v=beaa23be7cff17d9"></script>
+<script src="analise-ui.js?v=2f833f9ba0523d26"></script>
+<script src="pdsa-core.js?v=7b00780c3c9b21f7"></script>
+<script src="pdsa-ui.js?v=e48faa0746f08384"></script>
+<script src="sip-cme-dados.js?v=3154efe8af13b8f2"></script>
+<script src="sip-cme.js?v=064f32bdc3e9aaec"></script>
+<script src="ouvidoria-dados.js?v=df82aca57d4545b8"></script>
+<script src="ouvidoria.js?v=beec141078c418e3"></script>
 <script>
 /* ============================== boot ============================== */
 document.getElementById('gerado').textContent = DADOS.gerado_em;

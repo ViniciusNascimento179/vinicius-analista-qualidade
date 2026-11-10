@@ -1,0 +1,96 @@
+(function(root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else {
+    root.Ouvidoria = api;
+    RENDER.ouvidoria = () => api.montar(document.getElementById('aba-ouvidoria'), root.OuvidoriaDados);
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function() {
+  'use strict';
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const num = n => Number(n).toLocaleString('pt-BR');
+  const percentual = (n,d) => d ? `${(100*n/d).toLocaleString('pt-BR',{maximumFractionDigits:1})}%` : '—';
+  const cores = {'Elogio':'#16a34a','Queixa':'#dc2626','Solicitação':'#2563eb','Inadequação de Cliente':'#7c3aed','Não informado':'#94a3b8','Tipo não padronizado':'#64748b'};
+  const ordenar = rows => rows.sort((a,b)=>b.total-a.total || a.nome.localeCompare(b.nome,'pt-BR'));
+  function resumir(base, filtros={}) {
+    const grupos = base.grupos.filter(g=>['ano','setor','tipo','status'].every(k=>!filtros[k] || filtros[k]==='todos' || g[k]===filtros[k]));
+    const setores = new Map((filtros.setor && filtros.setor!=='todos' ? [filtros.setor] : base.setores).map(nome=>[nome,{nome,total:0,concluidos:0,tipos:{}}]));
+    const tipos = new Map(), status = new Map(), motivos = new Map(), meses = new Map();
+    let total=0, concluidos=0;
+    for (const g of grupos) {
+      total+=g.n;
+      const fechado=g.status==='Concluído';
+      if (fechado) concluidos+=g.n;
+      if(!setores.has(g.setor)) setores.set(g.setor,{nome:g.setor,total:0,concluidos:0,tipos:{}});
+      const s=setores.get(g.setor);s.total+=g.n;s.concluidos+=fechado?g.n:0;s.tipos[g.tipo]=(s.tipos[g.tipo]||0)+g.n;
+      for(const [mapa,nome] of [[tipos,g.tipo],[status,g.status],[motivos,g.motivo],[meses,g.mes]]) mapa.set(nome,(mapa.get(nome)||0)+g.n);
+    }
+    const lista=m=>ordenar([...m].map(([nome,total])=>({nome,total})));
+    return {total,concluidos,naoConcluidos:total-concluidos,setores:ordenar([...setores.values()]),tipos:lista(tipos),status:lista(status),motivos:lista(motivos),meses:lista(meses).sort((a,b)=>a.nome.localeCompare(b.nome)),grupos};
+  }
+  function analise(s) {
+    if(!s.total) return ['Não há registros para a combinação de filtros selecionada.'];
+    const resultados=[`O recorte reúne ${num(s.total)} registros, dos quais ${num(s.concluidos)} estão concluídos (${percentual(s.concluidos,s.total)}). Os demais ${num(s.naoConcluidos)} não estão marcados como concluídos na planilha.`];
+    const queixas=s.tipos.find(t=>t.nome==='Queixa')?.total||0;
+    const elogios=s.tipos.find(t=>t.nome==='Elogio')?.total||0;
+    const solicitacoes=s.tipos.find(t=>t.nome==='Solicitação')?.total||0;
+    resultados.push(`São ${num(queixas)} queixas, ${num(elogios)} elogios e ${num(solicitacoes)} solicitações. Os percentuais expressam a distribuição dos registros de ouvidoria, não uma taxa de satisfação dos pacientes.`);
+    const setor=s.setores.find(t=>t.total);
+    if(setor) resultados.push(`${setor.nome} concentra ${num(setor.total)} registros (${percentual(setor.total,s.total)} do recorte). O volume deve ser interpretado em conjunto com a quantidade de atendimentos de cada setor, não disponível nesta base.`);
+    const motivos=s.motivos.filter(m=>!['Não informado','Motivo não padronizado','Elogio'].includes(m.nome)).slice(0,3);
+    if(motivos.length) resultados.push(`Os principais motivos padronizados, excluindo o motivo “Elogio”, são: ${motivos.map(m=>`${m.nome} (${num(m.total)})`).join('; ')}. O filtro de tipo permite analisar separadamente queixas e solicitações.`);
+    resultados.push('O status “Concluído” indica encerramento registrado. A base não permite afirmar, por esse status, que a causa foi eliminada ou que o solicitante ficou satisfeito.');
+    return resultados;
+  }
+  function barras(rows, total, segmentado=false) {
+    const max=Math.max(1,...rows.map(r=>r.total));
+    return `<div class="ouv-escala" aria-hidden="true"><span>0</span><span>${num(max)} registros</span></div><ol class="ouv-barras">${rows.map(r=>`<li class="ouv-barra"><span class="ouv-barra-label">${esc(r.nome)}</span><span class="ouv-trilho" aria-hidden="true"><span class="ouv-segmento" style="width:${100*(segmentado?r.concluidos:r.total)/max}%;background:${segmentado?'#16a34a':'#2563eb'}"></span>${segmentado?`<span class="ouv-segmento" style="width:${100*(r.total-r.concluidos)/max}%;background:#d97706"></span>`:''}</span><strong title="${percentual(r.total,total)} do recorte${segmentado?`; ${r.concluidos} concluídos`:''}">${num(r.total)}</strong></li>`).join('')}</ol>`;
+  }
+  function montar(sec,base) {
+    if(!sec) return;
+    if(!base?.grupos) {sec.innerHTML='<p class="ouv-vazio">A base da ouvidoria não está disponível.</p>';return;}
+    const options=(values,label)=>`<option value="todos">${label}</option>${values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}`;
+    const todosTipos=[...new Set([...base.tipos,...base.grupos.map(g=>g.tipo)])];
+    const todosStatus=[...new Set([...base.status,...base.grupos.map(g=>g.status)])];
+    const anoPadrao=base.anos.filter(a=>/^\d{4}$/.test(a)).sort().at(-1)||'todos';
+    sec.innerHTML=`<div class="ouv-titulo"><div><h2>Ouvidoria</h2><p>Manifestações, conclusão e motivos por setor</p></div><span>Dados até ${base.fim?base.fim.split('-').reverse().join('/'):'data não informada'}</span></div>
+      <div class="ouv-filtros"><label>Ano de abertura<select id="ouv-ano">${options(base.anos,'Todos os anos')}</select></label><label class="ouv-setor">Setor<select id="ouv-setor">${options(base.setores,'Todos os setores')}</select></label><label>Tipo<select id="ouv-tipo">${options(todosTipos,'Todos os tipos')}</select></label><label>Status<select id="ouv-status">${options(todosStatus,'Todos os status')}</select></label><button id="ouv-limpar" type="button">Limpar filtros</button></div>
+      <p id="ouv-recorte" class="ouv-recorte" aria-live="polite"></p><div id="ouv-conteudo"></div>`;
+    const selects=Object.fromEntries(['ano','setor','tipo','status'].map(k=>[k,sec.querySelector(`#ouv-${k}`)]));
+    selects.ano.value=anoPadrao;
+    let incluirZeros=false;
+    function atualizar() {
+      const filtros=Object.fromEntries(Object.entries(selects).map(([k,s])=>[k,s.value]));
+      const s=resumir(base,filtros),valor=tipo=>s.tipos.find(t=>t.nome===tipo)?.total||0;
+      const periodo=filtros.ano==='todos'?'Todos os anos':filtros.ano;
+      const setoresComRegistro=s.setores.filter(t=>t.total>0);
+      const setoresVisiveis=incluirZeros?s.setores:setoresComRegistro;
+      const motivoTop=s.motivos.slice(0,10);
+      const outrosTipos=s.tipos.filter(t=>!['Queixa','Elogio','Solicitação'].includes(t.nome)).reduce((a,t)=>a+t.total,0);
+      sec.querySelector('#ouv-recorte').textContent=`${periodo} · ${filtros.setor==='todos'?'Todos os setores':filtros.setor} · ${filtros.tipo==='todos'?'Todos os tipos':filtros.tipo} · ${filtros.status==='todos'?'Todos os status':filtros.status} · ${num(s.total)} registros`;
+      const card=(label,value,detail,cor='')=>`<div class="kpi ${cor}"><div class="rotulo">${label}</div><div class="valor">${value}</div><div class="detalhe">${detail}</div></div>`;
+      const distrib=(rows,cor)=>rows.map(r=>`<div class="ouv-tipo"><div><span>${esc(r.nome)}</span><span><strong>${num(r.total)}</strong><small>${percentual(r.total,s.total)}</small></span></div><div class="ouv-trilho" aria-hidden="true"><span class="ouv-segmento" style="width:${s.total?100*r.total/s.total:0}%;background:${cor(r.nome)}"></span></div></div>`).join('');
+      sec.querySelector('#ouv-conteudo').innerHTML=`${!s.total?'<p class="ouv-vazio" role="status">Nenhum registro corresponde aos filtros. Altere o ano, setor, tipo ou status para consultar outros resultados.</p>':''}<div class="kpis">
+        ${card('Registros',num(s.total),`${num(setoresComRegistro.length)} ${setoresComRegistro.length===1?'setor com registros':'setores com registros'}`,'info')}
+        ${card('Concluídos',num(s.concluidos),`${percentual(s.concluidos,s.total)} do recorte`,'ok')}
+        ${card('Não concluídos',num(s.naoConcluidos),'Demais status da planilha','warn')}
+        ${card('Elogios',num(valor('Elogio')),`${percentual(valor('Elogio'),s.total)} do recorte`,'ok')}
+        ${card('Queixas',num(valor('Queixa')),`${percentual(valor('Queixa'),s.total)} do recorte`,'bad')}
+        ${card('Solicitações',num(valor('Solicitação')),`${percentual(valor('Solicitação'),s.total)} do recorte`,'info')}
+      </div><div class="grade ouv-grade">
+      <section class="painel"><h2>Registros por setor</h2><p class="ouv-nota">Todos os setores com registros no recorte, em ordem de volume. Role para consultar a lista completa.</p><div class="ouv-legenda"><span style="--cor:#16a34a">Concluídos</span><span style="--cor:#d97706">Não concluídos</span></div><label class="ouv-check"><input type="checkbox" id="ouv-zeros" ${incluirZeros?'checked':''}>Incluir setores cadastrados sem registros no recorte</label><div class="ouv-scroll" tabindex="0" aria-label="Gráfico de barras horizontais de todos os setores">${barras(setoresVisiveis,s.total,true)}</div><p class="ouv-nota">${setoresVisiveis.length} setores exibidos · ${num(s.total)} registros no total</p></section>
+      <section class="painel"><h2>Tipos de manifestação</h2>${distrib(s.tipos,n=>cores[n]||'#64748b')}<p class="ouv-nota">${outrosTipos?`${num(outrosTipos)} registros em outros tipos ou sem tipo informado.`:'Distribuição dos registros no recorte selecionado.'}</p><div class="ouv-status"><h3>Situação das manifestações</h3>${distrib(s.status,n=>n==='Concluído'?'#16a34a':n==='Em andamento'?'#d97706':'#64748b')}<p class="ouv-nota">Conclusão conforme o campo Status, independentemente da data de conclusão.</p></div></section>
+      <section class="painel full"><h2>Principais motivos</h2><p class="ouv-nota">${motivoTop.length} motivos mais frequentes entre ${s.motivos.length} no recorte. Use o filtro Tipo para ver somente queixas, elogios ou solicitações.</p>${barras(motivoTop,s.total)}<details class="ouv-detalhes"><summary>Consultar todos os motivos (${s.motivos.length})</summary><div class="ouv-tabela"><table><caption>Contagens e participação no recorte</caption><thead><tr><th scope="col">Motivo</th><th scope="col">Registros</th><th scope="col">Participação</th></tr></thead><tbody>${s.motivos.map(m=>`<tr><td>${esc(m.nome)}</td><td>${num(m.total)}</td><td>${percentual(m.total,s.total)}</td></tr>`).join('')}</tbody></table></div></details></section>
+      <section class="painel full"><details class="ouv-detalhes"><summary>Resumo por setor: conclusão e tipos</summary><div class="ouv-tabela"><table><caption>Todos os setores com registros no recorte</caption><thead><tr>${['Setor','Total','Concluídos','Conclusão','Elogios','Queixas','Solicitações','Outros / sem tipo'].map(t=>`<th scope="col">${t}</th>`).join('')}</tr></thead><tbody>${setoresComRegistro.map(r=>`<tr><td>${esc(r.nome)}</td><td>${num(r.total)}</td><td>${num(r.concluidos)}</td><td>${percentual(r.concluidos,r.total)}</td><td>${num(r.tipos.Elogio||0)}</td><td>${num(r.tipos.Queixa||0)}</td><td>${num(r.tipos['Solicitação']||0)}</td><td>${num(r.total-(r.tipos.Elogio||0)-(r.tipos.Queixa||0)-(r.tipos['Solicitação']||0))}</td></tr>`).join('')}</tbody></table></div></details></section>
+      <section class="painel full"><details class="ouv-detalhes"><summary>Critérios de contagem e qualidade da base</summary><ul><li>O ano vem da data de abertura. A base contém ${esc(base.anos.join(', '))}; datas foram preservadas como preenchidas.</li><li>Cada linha preenchida conta como um registro. ${num(base.qualidade.linhas_modelo_ignoradas||0)} linhas de modelo com apenas número de BO foram excluídas. ${num(base.qualidade.numeros_bo_repetidos||0)} números de BO aparecem em mais de uma linha e foram mantidos, pois os registros podem representar manifestações distintas.</li><li>Motivos fora do catálogo da planilha são agrupados como “Motivo não padronizado”. Campos vazios são “Não informado”. No recorte: ${num(s.motivos.find(m=>m.nome==='Motivo não padronizado')?.total||0)} motivos não padronizados e ${num(s.motivos.find(m=>m.nome==='Não informado')?.total||0)} motivos não informados.</li><li>Os setores seguem os rótulos da fonte, com espaços e diferenças de maiúsculas normalizados. Não são agrupados setores distintos.</li><li>São utilizados somente dados agregados. Nomes de pacientes e responsáveis, números de BO, descrições e observações não integram a base do painel.</li></ul></details></section>
+      </div><p class="ouv-fonte">Fonte: ${esc(base.fonte)} · ${esc(base.abas.join(', '))}. Atualização independente dos demais painéis.</p>
+      <section class="analise-critica ouv-analise" aria-label="Análise crítica — Ouvidoria"><div class="ac-cabecalho"><div><span class="ac-selo">Análise crítica</span><h2>Ouvidoria · ${esc(periodo)}</h2></div></div><p class="ac-subtitulo">Leitura descritiva do recorte selecionado</p><div data-ac-edit="paragrafos" data-ac-tipo="lista" data-ac-classe="ouv-paragrafo" aria-label="Texto da análise crítica da Ouvidoria">${analise(s).map(p=>`<p class="ouv-paragrafo">${esc(p)}</p>`).join('')}</div></section>`;
+      sec.querySelector('#ouv-zeros').addEventListener('change',e=>{incluirZeros=e.target.checked;atualizar();});
+      if(typeof AnaliseEditor!=='undefined') AnaliseEditor.montar({box:sec.querySelector('.analise-critica'),aba:'ouvidoria',filtro:JSON.stringify(filtros),base:{fonte:base.fonte,grupos:s.grupos}});
+    }
+    Object.values(selects).forEach(el=>el.addEventListener('change',atualizar));
+    sec.querySelector('#ouv-limpar').addEventListener('click',()=>{Object.values(selects).forEach(el=>{el.value='todos';});atualizar();});
+    atualizar();
+  }
+  return {resumir,analise,montar,percentual};
+});
