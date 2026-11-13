@@ -4,10 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vinicius Analista Qualidade — Dashboard Integrado da Qualidade</title>
-<link rel="stylesheet" href="pdsa.css?v=d5662f9fa8c53108">
-<link rel="stylesheet" href="sip-cme.css?v=5dd73fa1e0422d49">
-<link rel="stylesheet" href="ouvidoria.css?v=eab1070cb9d29e8d">
-<link rel="stylesheet" href="analise.css?v=90801ef66afb922e">
+<link rel="stylesheet" href="jci.css?v=7a1f1f2f23726781">
+<link rel="stylesheet" href="pdsa.css?v=ba9d500587f9ce45">
+<link rel="stylesheet" href="sip-cme.css?v=964220fc70cf3303">
+<link rel="stylesheet" href="ouvidoria.css?v=566f535d31e628d9">
+<link rel="stylesheet" href="analise.css?v=e4b90b5a5c6795a5">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   :root {
@@ -113,7 +114,7 @@
   Fonte: Planos de Ação da Qualidade (Power BI) · Pipeline Python/pandas · Publicado via GitHub Pages
 </footer>
 
-<script src="data.js?v=384e493811daf4f8"></script>
+<script src="data.js?v=678ca94f246c8b7b"></script>
 <script>
 /* ============================== utilidades ============================== */
 const fmt = n => Number(n).toLocaleString('pt-BR');
@@ -189,7 +190,7 @@ RENDER.visao = function(){
       <div class="kpi info"><div class="rotulo">Rounds 2023–2026</div><div class="valor">${pctRounds}%</div><div class="detalhe">${fmt(totR)} de ${fmt(totP)} realizados</div></div>
       <div class="kpi warn"><div class="rotulo">Planos Huddle</div><div class="valor">${fmt(H.planos_total)}</div><div class="detalhe">${pctHuddle}% concluídos · ${fmt(H.follow_total)} follow-ups</div></div>
       <div class="kpi"><div class="rotulo">Pacientes Watcher</div><div class="valor">${fmt(W.total)}</div><div class="detalhe">${fmt(obitos)} óbitos · perm. média ${W.permanencia_media ?? '—'} dias</div></div>
-      <div class="kpi ${pctJci >= 70 ? 'ok' : 'bad'}"><div class="rotulo">Conformidade JCI</div><div class="valor">${pctJci}%</div><div class="detalhe">${fmt(nc)} não conformes</div></div>
+      <div class="kpi ${pctJci >= 70 ? 'ok' : 'bad'}"><div class="rotulo">Checklist interno JCI</div><div class="valor">${pctJci}%</div><div class="detalhe">${fmt(nc)} não conformes · base sem data</div></div>
       <div class="kpi info"><div class="rotulo">Planos de comitês</div><div class="valor">${fmt(J.comites_total)}</div><div class="detalhe">${fmt(J.comites_status['Em Andamento'] || 0)} em andamento</div></div>
     </div>
 
@@ -206,7 +207,7 @@ RENDER.visao = function(){
     <div class="grade">
       <div class="painel full"><h2>Panorama de registros por fonte</h2><div class="canvas-wrap"><canvas id="g-fontes"></canvas></div></div>
       <div class="painel"><h2>Situação das ações de inspeção</h2><div class="canvas-wrap"><canvas id="g-vis-situacao"></canvas></div></div>
-      <div class="painel"><h2>Conformidade JCI — visão geral</h2><div class="canvas-wrap"><canvas id="g-vis-jci"></canvas></div></div>
+      <div class="painel"><h2>Checklist interno JCI — base sem data</h2><div class="canvas-wrap"><canvas id="g-vis-jci"></canvas></div></div>
     </div>`;
 
   novoGrafico('g-fontes', 'bar',
@@ -491,16 +492,19 @@ RENDER.jci = function(){
 };
 
 </script>
-<script src="inspecoes_v3.js?v=2404b50bb826d9dd"></script>
-<script src="analise-dados.js?v=b080e94d904d6731"></script>
-<script src="analise-editor.js?v=beaa23be7cff17d9"></script>
-<script src="analise-ui.js?v=2f833f9ba0523d26"></script>
-<script src="pdsa-core.js?v=7b00780c3c9b21f7"></script>
-<script src="pdsa-ui.js?v=e48faa0746f08384"></script>
-<script src="sip-cme-dados.js?v=3154efe8af13b8f2"></script>
-<script src="sip-cme.js?v=064f32bdc3e9aaec"></script>
-<script src="ouvidoria-dados.js?v=49bf1940bd22d400"></script>
-<script src="ouvidoria.js?v=d984a15b7d4b88c6"></script>
+<script src="inspecoes_v3.js?v=c0d343c61d077097"></script>
+<script src="analise-dados.js?v=49d55631a0edd702"></script>
+<script src="analise-editor.js?v=1db84334bad83590"></script>
+<script src="analise-ui.js?v=2080777e4c953c74"></script>
+<script src="pdsa-core.js?v=a345eb69c7597768"></script>
+<script src="pdsa-ui.js?v=d9a4d85a5d9ac830"></script>
+<script src="sip-cme-dados.js?v=ed59873e405df311"></script>
+<script src="sip-cme.js?v=354d38538ab1ae06"></script>
+<script src="ouvidoria-dados.js?v=c400d755b5ec0794"></script>
+<script src="ouvidoria.js?v=2b81940e346759b4"></script>
+<script src="jci-dados.js?v=c83e964c03cf33a4"></script>
+<script src="jci-core.js?v=05c7892eab481df0"></script>
+<script src="jci.js?v=9a06bb7934e577bc"></script>
 <script>
 /* ============================== boot ============================== */
 document.getElementById('gerado').textContent = DADOS.gerado_em;
@@ -515,3 +519,4 @@ if (abaHash && document.querySelector(`#abas button[data-aba="${abaHash}"]`)) {
 </script>
 </body>
 </html>
+

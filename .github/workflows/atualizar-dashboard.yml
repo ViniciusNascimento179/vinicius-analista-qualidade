@@ -69,6 +69,7 @@ jobs:
           node scripts/test_sip_cme.cjs
           node scripts/test_analise_editor.cjs
           node scripts/test_ouvidoria.cjs
+          node scripts/test_jci.cjs
       - name: Validar cálculos e relatório PDSA
         run: node scripts/test_pdsa.cjs
       - name: Commit dos dados gerados
@@ -97,3 +98,4 @@ jobs:
       - name: Publicar no GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+

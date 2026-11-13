@@ -13,6 +13,43 @@ Site público com **6 painéis integrados** da Qualidade do Hospital Vera Cruz, 
 
 **Site:** https://viniciusnascimento179.github.io/vinicius-analista-qualidade/
 
+## Biblioteca JCI — relatório CBA de outubro/2026
+
+A aba **JCI + Comitês** oferece leitura integral de 1.110 elementos de mensuração,
+em 16 capítulos e 248 padrões. Filtros de ano, avaliação, capítulo, classificação
+e busca textual atualizam os totais e a biblioteca. A consulta inclui requisitos,
+achados/comentários, recomendações do padrão e páginas de origem. A paginação
+permite mostrar todos os elementos e abrir a seleção para leitura contínua.
+**Exportar seleção completa** gera um HTML com todos os resultados dos filtros,
+independentemente da página exibida; use Imprimir para salvar em PDF se necessário.
+
+**Correção informada pelo solicitante em 13/11/2026:** GLD.02.00 — EM 2 aparece
+como PC na página 100 do PDF, mas deve ser tratado como Não conforme. A tabela da
+página 167 soma 1.109 itens e não inclui essa categoria. A base guarda a
+classificação original e o motivo do ajuste. Totais exibidos: **859 conformes,
+182 não conformes e 69 não se aplica**, totalizando **1.110**. O PDF não foi alterado.
+O importador confere os totais originais por capítulo antes de aplicar a correção.
+
+Só a avaliação CBA de outubro/2026 possui data nesta biblioteca. O checklist
+interno anterior e os planos dos comitês ficam separados e não são vinculados
+automaticamente aos novos achados. Não há comparação temporal com bases sem data.
+A fonte independente `dashboard/jci-dados.js` é preservada pelo processamento diário.
+
+Importação local específica para este PDF (dependência opcional: `pdfplumber`):
+
+```bash
+python scripts/importa_jci_cba.py --fonte "caminho/relatorio.pdf" --cache "tmp/cba-cache.json"
+node scripts/test_jci.cjs
+python scripts/versiona_assets.py
+```
+
+O importador verifica o SHA-256 da edição conferida. Outro relatório exige revisão
+do mapeamento, evitando aplicar correções por página ao documento errado. Espaços e
+quebras de linha são normalizados; campos vazios da fonte permanecem vazios. As
+tabelas irregulares da página 58 foram conferidas visualmente. Não adicionar o PDF
+nem caches de extração ao repositório. A biblioteca contém textos integrais e
+achados institucionais; sua publicação foi autorizada pelo solicitante em 13/11/2026.
+
 ## Ouvidoria
 
 A aba Ouvidoria permite filtrar ano de abertura, setor, tipo e status. Mostra
@@ -131,3 +168,4 @@ de apontamentos do recorte.
 
 Testes: `python -m unittest discover -s scripts -p 'test_*.py'` e
 `node scripts/test_analises.cjs`. Ambos também são executados antes da publicação.
+

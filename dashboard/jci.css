@@ -1,0 +1,30 @@
+#aba-jci{--jci-blue:#214d70}
+.jci-cabecalho{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin:6px 0 20px}
+.jci-cabecalho h2{font-size:1.5rem;color:var(--brand);margin-bottom:6px}
+.jci-cabecalho p,.jci-nota{color:#536578;font-size:.9rem;line-height:1.6}
+.jci-selo{background:#e1edf5;color:#214d70;padding:8px 12px;border-radius:8px;white-space:nowrap;font-size:.85rem;font-weight:600}
+.jci-filtros{display:grid;grid-template-columns:110px 1.3fr 1.7fr 160px;gap:12px;margin-bottom:18px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+.jci-filtros label,.jci-paginacao label{font-size:.82rem;font-weight:600;color:#44586e;display:flex;flex-direction:column;gap:6px}
+.jci-filtros select,.jci-filtros input,.jci-paginacao select{width:100%;padding:10px;border:1px solid #b8c8d8;border-radius:7px;background:white;color:var(--ink);font:inherit;min-height:42px}
+.jci-busca{grid-column:1 / -2}.jci-limpar{align-self:end}
+#aba-jci button.jci-btn,.jci-paginacao button{border:1px solid #b8c8d8;border-radius:7px;background:#fff;color:var(--jci-blue);padding:10px 14px;font:600 .85rem 'Segoe UI',sans-serif;cursor:pointer;min-height:42px}
+#aba-jci button.jci-btn:hover,.jci-paginacao button:hover{background:#edf4f9}
+#aba-jci button:disabled{opacity:.45;cursor:default}
+#aba-jci :focus-visible{outline:3px solid #2583c7;outline-offset:3px}
+.jci-kpis .kpi .valor{font-size:2.1rem}.jci-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+.jci-kpis .kpi{border-top:3px solid #315a79}.jci-kpis .ok{border-top-color:#16805b}.jci-kpis .bad{border-top-color:#bc3e43}.jci-kpis .mut{border-top-color:#8b9eb0}
+.jci-tabela{overflow:auto;max-height:490px}.jci-tabela td{vertical-align:middle}.jci-tabela th{z-index:1}.jci-tabela .jci-capitulo{border:0;background:none;color:#205780;cursor:pointer;text-align:left;font-weight:600;padding:5px 0;min-width:220px;font-size:.88rem}
+.jci-barra{display:flex;min-width:100px;width:100%;height:11px;background:#eef2f6;border-radius:5px;overflow:hidden}.jci-barra .c{background:#1b9069}.jci-barra .nc{background:#c94f55}.jci-barra .na{background:#99a9ba}
+.jci-legenda{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:#536578;margin-bottom:14px}.jci-legenda i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.jci-biblioteca{margin-top:18px}.jci-biblioteca-topo{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:15px}.jci-acoes{display:flex;flex-wrap:wrap;gap:8px}
+.jci-elemento{border:1px solid #d9e3ed;border-radius:9px;margin:10px 0;background:#fff;overflow:hidden}
+.jci-elemento>summary{cursor:pointer;padding:15px 17px;list-style:none;display:grid;grid-template-columns:20px 1fr;gap:9px}
+.jci-elemento>summary::-webkit-details-marker{display:none}.jci-elemento>summary:before{content:'+';font-size:20px;line-height:1.2;color:#4a6d8a}.jci-elemento[open]>summary:before{content:'−'}
+.jci-elemento[open]>summary{background:#f3f7fb;border-bottom:1px solid var(--line)}
+.jci-elemento-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:7px}.jci-elemento-id{font-weight:700;color:#254b6a}.jci-elemento-preview{color:#52657a;font-size:.9rem;line-height:1.5}
+.jci-conteudo{padding:4px 20px 20px 46px;line-height:1.7;font-size:.94rem}.jci-conteudo h4{margin:17px 0 4px;color:#214d70;font-size:.83rem}.jci-conteudo p{white-space:pre-wrap;overflow-wrap:anywhere}.jci-conteudo .jci-texto-integral{color:#102a43;font-weight:500}.jci-conteudo .jci-fonte{font-size:.78rem;color:#61758b;margin-top:20px;border-top:1px solid var(--line);padding-top:12px}
+.jci-paginacao{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:16px 0;flex-wrap:wrap;font-size:.85rem}.jci-paginacao label{flex-direction:row;align-items:center}.jci-paginacao select{width:100px}.jci-paginacao nav{display:flex;gap:8px;align-items:center}
+.jci-comites{margin-top:18px}.jci-comites>summary{cursor:pointer;font-weight:600;color:#254b6a}.jci-comites .jci-nota{margin:12px 0}
+.jci-conferencia{margin:15px 0;font-size:.85rem;line-height:1.6;color:#536578}.jci-conferencia summary{cursor:pointer;font-weight:600}.jci-conferencia p{margin-top:8px}
+@media(max-width:800px){.jci-filtros{grid-template-columns:1fr 1fr}.jci-busca{grid-column:1/-1}.jci-limpar{grid-column:1/-1}.jci-kpis{grid-template-columns:1fr 1fr}.jci-cabecalho,.jci-biblioteca-topo{flex-direction:column}.jci-conteudo{padding:4px 16px 16px}.jci-cabecalho h2{font-size:1.25rem}}
+@media(max-width:450px){.jci-filtros{grid-template-columns:1fr}.jci-kpis .kpi{padding:12px}.jci-kpis .kpi .valor{font-size:1.6rem}.jci-paginacao{align-items:flex-start;flex-direction:column}.jci-elemento>summary{padding:12px}}
