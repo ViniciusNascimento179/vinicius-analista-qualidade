@@ -135,6 +135,40 @@
         </details>`;
       }).join('')}</section>`;
   }
+  function montarResumoGeral(sec, base, solicitacoes, options) {
+    const resumo = sec.querySelector('#ouv-resumo-geral');
+    if (!Array.isArray(solicitacoes)) {
+      resumo.textContent = 'O resumo geral depende da base de solicitações, que está indisponível.';
+      return;
+    }
+    const anos = [...new Set([...base.anos, ...solicitacoes.map(a => String(a.ano))])].sort();
+    resumo.innerHTML = `<div class="ouv-titulo"><h2>Resumo geral da Ouvidoria</h2>
+      <label>Período do resumo <select>${options(anos,'Todos os anos')}</select></label></div>
+      <div class="kpis" aria-live="polite"></div>
+      <p class="ouv-nota">Ocorrências incluem queixas e demais boletins, inclusive os de tipo não informado. Boletins classificados como solicitação ou elogio entram nas respectivas categorias. Um atendimento registrado nas duas fontes conta uma vez em cada fonte.</p>`;
+    const periodo = resumo.querySelector('select');
+    function atualizarResumo() {
+      const ano = periodo.value;
+      const boletins = resumir(base, {ano});
+      const atendimentos = solicitacoes.filter(a => ano === 'todos' || String(a.ano) === ano)
+        .reduce((soma, a) => soma + a.total, 0);
+      const pedidos = boletins.tipos.find(t => t.nome === 'Solicitação')?.total || 0;
+      const elogios = boletins.tipos.find(t => t.nome === 'Elogio')?.total || 0;
+      const total = boletins.total + atendimentos;
+      const valores = [
+        ['Total de registros', total, `${num(boletins.total)} boletins + ${num(atendimentos)} atendimentos`, 'info'],
+        ['Ocorrências', boletins.total - pedidos - elogios, 'Queixas e demais boletins', ''],
+        ['Solicitações', atendimentos + pedidos, `${num(atendimentos)} atendimentos + ${num(pedidos)} boletins`, ''],
+        ['Elogios', elogios, 'Boletins de elogio', 'ok']
+      ];
+      resumo.querySelector('.kpis').innerHTML = valores.map(([nome, n, detalhe, cor], i) =>
+        `<div class="kpi ${cor}"><div class="rotulo">${nome}</div><div class="valor">${num(n)}</div>
+        <div class="detalhe">${i ? percentual(n,total)+' do total · ' : ''}${detalhe}</div></div>`
+      ).join('');
+    }
+    periodo.addEventListener('change', atualizarResumo);
+    atualizarResumo();
+  }
   function montar(sec,base,solicitacoes) {
     if(!sec) return;
     if(!base?.grupos) {sec.innerHTML='<p class="ouv-vazio">A base da ouvidoria não está disponível.</p>';return;}
@@ -142,9 +176,12 @@
     const todosTipos=[...new Set([...base.tipos,...base.grupos.map(g=>g.tipo)])];
     const todosStatus=[...new Set([...base.status,...base.grupos.map(g=>g.status)])];
     const anoPadrao=base.anos.filter(a=>/^\d{4}$/.test(a)).sort().at(-1)||'todos';
-    sec.innerHTML=`<div class="ouv-titulo"><div><h2>Ocorrências da Ouvidoria</h2><p>${num(base.total)} boletins no histórico completo · <a href="#solicitacoes">Ver solicitações recebidas</a></p></div><span>Dados até ${base.fim?base.fim.split('-').reverse().join('/'):'data não informada'}</span></div>
+    sec.innerHTML=`<div class="ouv-titulo"><div><h2>Ouvidoria</h2><p><a href="#solicitacoes">Ver atendimentos das planilhas de solicitações</a></p></div><span>Dados até ${base.fim?base.fim.split('-').reverse().join('/'):'data não informada'}</span></div>
+      <section class="painel" id="ouv-resumo-geral" aria-label="Resumo geral da Ouvidoria"></section>
+      <h2>Detalhamento dos boletins</h2>
       <div class="ouv-filtros"><label>Ano de abertura<select id="ouv-ano">${options(base.anos,'Todos os anos')}</select></label><label class="ouv-setor">Setor<select id="ouv-setor">${options(base.setores,'Todos os setores')}</select></label><label>Tipo<select id="ouv-tipo">${options(todosTipos,'Todos os tipos')}</select></label><label>Status<select id="ouv-status">${options(todosStatus,'Todos os status')}</select></label><button id="ouv-limpar" type="button">Limpar filtros</button></div>
       <p id="ouv-recorte" class="ouv-recorte" aria-live="polite"></p><label class="ouv-check"><input type="checkbox" id="ouv-ajustar">Encaixar os 12 meses na tela (visualização compacta)</label><div id="ouv-mensais"></div><div id="ouv-conteudo"></div>`;
+    montarResumoGeral(sec, base, solicitacoes, options);
     const selects=Object.fromEntries(['ano','setor','tipo','status'].map(k=>[k,sec.querySelector(`#ouv-${k}`)]));
     selects.ano.value=anoPadrao;
     sec.querySelector('#ouv-ajustar').addEventListener('change',e=>sec.querySelector('#ouv-mensais').classList.toggle('ouv-compacto',e.target.checked));
@@ -166,7 +203,7 @@
       const card=(label,value,detail,cor='')=>`<div class="kpi ${cor}"><div class="rotulo">${label}</div><div class="valor">${value}</div><div class="detalhe">${detail}</div></div>`;
       const distrib=(rows,cor)=>rows.map(r=>`<div class="ouv-tipo"><div><span>${esc(r.nome === 'Solicitação' ? 'Boletim do tipo solicitação' : r.nome)}</span><span><strong>${num(r.total)}</strong><small>${percentual(r.total,s.total)}</small></span></div><div class="ouv-trilho" aria-hidden="true"><span class="ouv-segmento" style="width:${s.total?100*r.total/s.total:0}%;background:${cor(r.nome)}"></span></div></div>`).join('');
       sec.querySelector('#ouv-conteudo').innerHTML=`${!s.total?'<p class="ouv-vazio" role="status">Nenhum registro corresponde aos filtros. Altere o ano, setor, tipo ou status para consultar outros resultados.</p>':''}<div class="kpis">
-        ${card('Registros',num(s.total),`${num(quantidadeSetores)} ${quantidadeSetores===1?'setor identificado':'setores identificados'}`,'info')}
+        ${card('Boletins no recorte',num(s.total),`${num(quantidadeSetores)} ${quantidadeSetores===1?'setor identificado':'setores identificados'}`,'info')}
         ${card('Concluídos',num(s.concluidos),`${percentual(s.concluidos,s.total)} do recorte`,'ok')}
         ${card('Não concluídos',num(s.naoConcluidos),'Demais status da planilha','warn')}
         ${card('Elogios',num(valor('Elogio')),`${percentual(valor('Elogio'),s.total)} do recorte`,'ok')}
