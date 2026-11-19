@@ -3,10 +3,7 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   else {
     root.Ouvidoria = api;
-    RENDER.ouvidoria = () => api.montar(document.getElementById('aba-ouvidoria'), root.OuvidoriaDados);
-    RENDER.solicitacoes = () => {
-      document.getElementById('aba-solicitacoes').innerHTML = api.mostrarSolicitacoes(root.OuvidoriaSolicitacoes);
-    };
+    RENDER.ouvidoria = () => api.montar(document.getElementById('aba-ouvidoria'), root.OuvidoriaDados, root.OuvidoriaSolicitacoes);
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function() {
   'use strict';
@@ -124,28 +121,28 @@
       <caption>${esc(titulo)}</caption><thead><tr><th scope="col">${esc(titulo)}</th><th scope="col">Solicitações</th></tr></thead>
       <tbody>${linhas.map(r => `<tr><th scope="row">${esc(r.nome)}</th><td>${num(r.total)}</td></tr>`).join('')}</tbody>
       </table></div>`;
-    return `<section class="painel" id="solicitacoes" aria-labelledby="titulo-solicitacoes"><h2 id="titulo-solicitacoes">Solicitações recebidas · ${num(total)} registros</h2>
-      <p>Cada linha com data de entrada e informação sobre a solicitação conta como um atendimento. Fonte: abas de solicitações da Ouvidoria.</p>
+    return `<section class="ouv-status" id="solicitacoes" aria-labelledby="titulo-solicitacoes"><h3 id="titulo-solicitacoes">Solicitações recebidas · ${num(total)} atendimentos</h3>
+      <p>Atendimentos das planilhas de solicitações. A participação de cada ano é calculada sobre os ${num(total)} atendimentos. Os filtros acima se aplicam aos boletins.</p>
       ${[...anos].sort((a, b) => b.ano - a.ano).map(a => {
         const meses = Object.entries(a.meses).sort(([m], [n]) => Number(m) - Number(n))
           .map(([m, total]) => ({nome: mesesNomes[Number(m) - 1], total}));
-        return `<details class="ouv-detalhes"><summary>${a.ano} · ${num(a.total)} solicitações</summary>
+        return `<details class="ouv-detalhes"><summary>${a.ano} · ${num(a.total)} solicitações (${percentual(a.total,total)})</summary>
           <p>Entradas de ${dataBR(a.inicio)} a ${dataBR(a.fim)}.</p>
-          <div class="grade ouv-grade"><section class="painel"><h3>Por mês de entrada</h3>${tabela('Mês', meses)}</section>
-          <section class="painel"><h3>Por canal de origem</h3>${barras(lista(a.origens), a.total)}</section></div>
+          <div><section><h4>Por mês de entrada</h4>${tabela('Mês', meses)}</section>
+          <section><h4>Por canal de origem</h4>${barras(lista(a.origens), a.total)}</section></div>
           <details><summary>Por setor ou categoria de destino</summary>${tabela('Destino informado', lista(a.setores))}</details>
           <details><summary>Por tipo de solicitação</summary><p>Descrições livres sem correspondência no catálogo aparecem em “Outro tipo descrito”.</p>${tabela('Tipo', lista(a.tipos))}</details>
         </details>`;
       }).join('')}</section>`;
   }
-  function montar(sec,base) {
+  function montar(sec,base,solicitacoes) {
     if(!sec) return;
     if(!base?.grupos) {sec.innerHTML='<p class="ouv-vazio">A base da ouvidoria não está disponível.</p>';return;}
     const options=(values,label)=>`<option value="todos">${label}</option>${values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}`;
     const todosTipos=[...new Set([...base.tipos,...base.grupos.map(g=>g.tipo)])];
     const todosStatus=[...new Set([...base.status,...base.grupos.map(g=>g.status)])];
     const anoPadrao=base.anos.filter(a=>/^\d{4}$/.test(a)).sort().at(-1)||'todos';
-    sec.innerHTML=`<div class="ouv-titulo"><div><h2>Ocorrências da Ouvidoria</h2><p>${num(base.total)} boletins no histórico completo</p></div><span>Dados até ${base.fim?base.fim.split('-').reverse().join('/'):'data não informada'}</span></div>
+    sec.innerHTML=`<div class="ouv-titulo"><div><h2>Ocorrências da Ouvidoria</h2><p>${num(base.total)} boletins no histórico completo · <a href="#solicitacoes">Ver solicitações recebidas</a></p></div><span>Dados até ${base.fim?base.fim.split('-').reverse().join('/'):'data não informada'}</span></div>
       <div class="ouv-filtros"><label>Ano de abertura<select id="ouv-ano">${options(base.anos,'Todos os anos')}</select></label><label class="ouv-setor">Setor<select id="ouv-setor">${options(base.setores,'Todos os setores')}</select></label><label>Tipo<select id="ouv-tipo">${options(todosTipos,'Todos os tipos')}</select></label><label>Status<select id="ouv-status">${options(todosStatus,'Todos os status')}</select></label><button id="ouv-limpar" type="button">Limpar filtros</button></div>
       <p id="ouv-recorte" class="ouv-recorte" aria-live="polite"></p><label class="ouv-check"><input type="checkbox" id="ouv-ajustar">Encaixar os 12 meses na tela (visualização compacta)</label><div id="ouv-mensais"></div><div id="ouv-conteudo"></div>`;
     const selects=Object.fromEntries(['ano','setor','tipo','status'].map(k=>[k,sec.querySelector(`#ouv-${k}`)]));
@@ -167,7 +164,7 @@
       const semSetor=s.setores.find(m=>m.nome==='Não informado')?.total||0;
       sec.querySelector('#ouv-recorte').textContent=`${periodo} · ${filtros.setor==='todos'?'Todos os setores':filtros.setor} · ${filtros.tipo==='todos'?'Todos os tipos':filtros.tipo} · ${filtros.status==='todos'?'Todos os status':filtros.status} · ${num(s.total)} registros`;
       const card=(label,value,detail,cor='')=>`<div class="kpi ${cor}"><div class="rotulo">${label}</div><div class="valor">${value}</div><div class="detalhe">${detail}</div></div>`;
-      const distrib=(rows,cor)=>rows.map(r=>`<div class="ouv-tipo"><div><span>${esc(r.nome)}</span><span><strong>${num(r.total)}</strong><small>${percentual(r.total,s.total)}</small></span></div><div class="ouv-trilho" aria-hidden="true"><span class="ouv-segmento" style="width:${s.total?100*r.total/s.total:0}%;background:${cor(r.nome)}"></span></div></div>`).join('');
+      const distrib=(rows,cor)=>rows.map(r=>`<div class="ouv-tipo"><div><span>${esc(r.nome === 'Solicitação' ? 'Boletim do tipo solicitação' : r.nome)}</span><span><strong>${num(r.total)}</strong><small>${percentual(r.total,s.total)}</small></span></div><div class="ouv-trilho" aria-hidden="true"><span class="ouv-segmento" style="width:${s.total?100*r.total/s.total:0}%;background:${cor(r.nome)}"></span></div></div>`).join('');
       sec.querySelector('#ouv-conteudo').innerHTML=`${!s.total?'<p class="ouv-vazio" role="status">Nenhum registro corresponde aos filtros. Altere o ano, setor, tipo ou status para consultar outros resultados.</p>':''}<div class="kpis">
         ${card('Registros',num(s.total),`${num(quantidadeSetores)} ${quantidadeSetores===1?'setor identificado':'setores identificados'}`,'info')}
         ${card('Concluídos',num(s.concluidos),`${percentual(s.concluidos,s.total)} do recorte`,'ok')}
@@ -177,7 +174,7 @@
         ${card('Boletins do tipo solicitação',num(valor('Solicitação')),`${percentual(valor('Solicitação'),s.total)} do recorte`,'info')}
       </div>${semMotivo||setorPendente||semSetor?`<p class="ouv-recorte">Campos a completar neste recorte: ${num(semMotivo)} registros sem motivo, ${num(semSetor)} sem setor e ${num(setorPendente)} com setor não padronizado.</p>`:''}<div class="grade ouv-grade">
       <section class="painel"><h2>Registros por setor</h2><p class="ouv-nota">Todos os setores com registros no recorte, em ordem de volume. Role para consultar a lista completa.</p><div class="ouv-legenda"><span style="--cor:#16a34a">Concluídos</span><span style="--cor:#d97706">Não concluídos</span></div><label class="ouv-check"><input type="checkbox" id="ouv-zeros" ${incluirZeros?'checked':''}>Incluir setores cadastrados sem registros no recorte</label><div class="ouv-scroll" tabindex="0" aria-label="Gráfico de barras horizontais de todos os setores">${barras(setoresVisiveis,s.total,true)}</div><p class="ouv-nota">${setoresVisiveis.length} setores exibidos · ${num(s.total)} registros no total</p></section>
-      <section class="painel"><h2>Tipos de manifestação</h2>${distrib(s.tipos,n=>cores[n]||'#64748b')}<p class="ouv-nota">${outrosTipos?`${num(outrosTipos)} registros em outros tipos ou sem tipo informado.`:'Distribuição dos registros no recorte selecionado.'}</p><div class="ouv-status"><h3>Situação das manifestações</h3>${distrib(s.status,n=>n==='Concluído'?'#16a34a':n==='Em andamento'?'#d97706':'#64748b')}<p class="ouv-nota">Conclusão conforme o campo Status, independentemente da data de conclusão.</p></div></section>
+      <section class="painel"><h2>Tipos de ocorrência</h2>${distrib(s.tipos,n=>cores[n]||'#64748b')}<p class="ouv-nota">${outrosTipos?`${num(outrosTipos)} registros em outros tipos ou sem tipo informado.`:'Percentuais sobre os boletins do recorte selecionado.'}</p>${mostrarSolicitacoes(solicitacoes)}<div class="ouv-status"><h3>Situação das manifestações</h3>${distrib(s.status,n=>n==='Concluído'?'#16a34a':n==='Em andamento'?'#d97706':'#64748b')}<p class="ouv-nota">Conclusão conforme o campo Status, independentemente da data de conclusão.</p></div></section>
       <section class="painel full"><h2>Principais motivos</h2><p class="ouv-nota">${motivoTop.length} motivos mais frequentes entre ${s.motivos.length} no recorte. Use o filtro Tipo para ver somente queixas, elogios ou solicitações.</p>${barras(motivoTop,s.total)}<details class="ouv-detalhes"><summary>Consultar todos os motivos (${s.motivos.length})</summary><div class="ouv-tabela"><table><caption>Contagens e participação no recorte</caption><thead><tr><th scope="col">Motivo</th><th scope="col">Registros</th><th scope="col">Participação</th></tr></thead><tbody>${s.motivos.map(m=>`<tr><td>${esc(m.nome)}</td><td>${num(m.total)}</td><td>${percentual(m.total,s.total)}</td></tr>`).join('')}</tbody></table></div></details></section>
       <section class="painel full"><details class="ouv-detalhes"><summary>Resumo por setor: conclusão e tipos</summary><div class="ouv-tabela"><table><caption>Todos os setores com registros no recorte</caption><thead><tr>${['Setor','Total','Concluídos','Conclusão','Elogios','Queixas','Solicitações','Outros / sem tipo'].map(t=>`<th scope="col">${t}</th>`).join('')}</tr></thead><tbody>${setoresComRegistro.map(r=>`<tr><td>${esc(r.nome)}</td><td>${num(r.total)}</td><td>${num(r.concluidos)}</td><td>${percentual(r.concluidos,r.total)}</td><td>${num(r.tipos.Elogio||0)}</td><td>${num(r.tipos.Queixa||0)}</td><td>${num(r.tipos['Solicitação']||0)}</td><td>${num(r.total-(r.tipos.Elogio||0)-(r.tipos.Queixa||0)-(r.tipos['Solicitação']||0))}</td></tr>`).join('')}</tbody></table></div></details></section>
       <section class="painel full"><details class="ouv-detalhes"><summary>Critérios de contagem e qualidade da base</summary><ul><li>O ano vem da data de abertura. A base contém ${esc(base.anos.join(', '))}; datas foram preservadas como preenchidas. ${num(base.qualidade.sem_data_valida||0)} registros sem data válida ficam na opção “Sem data”, sem atribuir o ano pelo nome da aba.</li><li>Cada linha preenchida conta como um registro. ${num(base.qualidade.linhas_modelo_ignoradas||0)} linhas de modelo com apenas número de BO foram excluídas. ${num(base.qualidade.numeros_bo_repetidos||0)} números de BO aparecem em mais de uma linha e foram mantidos, pois os registros podem representar manifestações distintas.</li>${base.historico?`<li>Foram acrescentados ${num(base.qualidade.registros_historicos_adicionados||0)} registros do histórico. Outros ${num(base.qualidade.registros_historicos_ja_presentes||0)} já estavam na base atual e não foram contados novamente. A conferência entre arquivos usa BO e paciente somente durante o processamento local, uma correspondência por linha, preservando os campos da fonte atual.</li>`:''}<li>Motivos seguem o catálogo e correspondências exatas revisadas. Rótulos genéricos antigos conservam a indicação “histórico”. Relatos sem correspondência são “Motivo não padronizado”, sem interpretar seu conteúdo. Campos vazios são “Não informado”. No recorte: ${num(s.motivos.find(m=>m.nome==='Motivo não padronizado')?.total||0)} motivos não padronizados e ${num(semMotivo)} motivos não informados.</li><li>Setores antigos usam o de-para da fonte e equivalências explícitas de grafia. Sem correspondência segura, o registro fica em “Setor não padronizado”. No recorte: ${num(setorPendente)} registros nessa situação e ${num(semSetor)} sem setor informado. Esses grupos não representam setores institucionais.</li><li>São utilizados somente dados agregados. Nomes de pacientes e responsáveis, números de BO, descrições e observações não integram a base do painel.</li></ul></details></section>

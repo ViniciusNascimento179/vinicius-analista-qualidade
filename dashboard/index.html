@@ -95,7 +95,6 @@
   <button data-aba="jci">📋 JCI + Comitês</button>
   <button data-aba="sip-cme">🏥 SIP — CME</button>
   <button data-aba="ouvidoria">💬 Ocorrências da Ouvidoria</button>
-  <button data-aba="solicitacoes">📨 Solicitações da Ouvidoria</button>
   <button data-aba="pdsa">🧪 PDSA</button>
 </nav>
 
@@ -108,7 +107,6 @@
   <section id="aba-jci" class="aba"></section>
   <section id="aba-sip-cme" class="aba"></section>
   <section id="aba-ouvidoria" class="aba"></section>
-  <section id="aba-solicitacoes" class="aba"></section>
   <section id="aba-pdsa" class="aba"></section>
 </main>
 
@@ -203,7 +201,6 @@ RENDER.visao = function(){
       <div class="atalho" onclick="irPara('watcher')"><div class="icone">🛏️</div><div class="nome">Watcher</div><div class="desc">Pacientes vigilados — dados anonimizados</div></div>
       <div class="atalho" onclick="irPara('sip-cme')"><div class="icone">🏥</div><div class="nome">SIP — CME</div><div class="desc">Auditorias de pass-through, acessos, articulados e pressões</div></div>
       <div class="atalho" onclick="irPara('ouvidoria')"><div class="icone">💬</div><div class="nome">Ocorrências da Ouvidoria</div><div class="desc">Boletins por tipo, setor e status</div></div>
-      <div class="atalho" onclick="irPara('solicitacoes')"><div class="icone">📨</div><div class="nome">Solicitações da Ouvidoria</div><div class="desc">Atendimentos por ano, canal e destino</div></div>
       <div class="atalho" onclick="irPara('jci')"><div class="icone">📋</div><div class="nome">JCI + Comitês</div><div class="desc">Conformidade por capítulo e planos de comitê</div></div>
     </div>
 
@@ -513,11 +510,16 @@ RENDER.jci = function(){
 /* ============================== boot ============================== */
 document.getElementById('gerado').textContent = DADOS.gerado_em;
 function abrirAbaDoLink() {
-  const aba = location.hash.slice(1);
+  const destino = location.hash.slice(1);
+  const aba = destino === 'solicitacoes' ? 'ouvidoria' : destino;
   const botao = Array.from(document.querySelectorAll('#abas button[data-aba]'))
     .find(item => item.dataset.aba === aba);
   if (!botao) return false;
   botao.click();
+  if (destino === 'solicitacoes') {
+    history.replaceState(null, '', '#solicitacoes');
+    document.getElementById(destino)?.scrollIntoView();
+  }
   return true;
 }
 if (!abrirAbaDoLink()) {
