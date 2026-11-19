@@ -3,7 +3,10 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   else {
     root.Ouvidoria = api;
-    RENDER.ouvidoria = () => api.montar(document.getElementById('aba-ouvidoria'), root.OuvidoriaDados, root.OuvidoriaSolicitacoes);
+    RENDER.ouvidoria = () => api.montar(document.getElementById('aba-ouvidoria'), root.OuvidoriaDados);
+    RENDER.solicitacoes = () => {
+      document.getElementById('aba-solicitacoes').innerHTML = api.mostrarSolicitacoes(root.OuvidoriaSolicitacoes);
+    };
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function() {
   'use strict';
@@ -113,7 +116,7 @@
     }).join('')}</div>`;
   }
   function mostrarSolicitacoes(anos) {
-    if (!anos?.length) return '';
+    if (!anos?.length) return '<p class="ouv-vazio">Dados de solicitações indisponíveis.</p>';
     const total = anos.reduce((soma, a) => soma + a.total, 0);
     const dataBR = iso => iso.split('-').reverse().join('/');
     const lista = contagens => ordenar(Object.entries(contagens).map(([nome, total]) => ({nome, total})));
@@ -121,8 +124,8 @@
       <caption>${esc(titulo)}</caption><thead><tr><th scope="col">${esc(titulo)}</th><th scope="col">Solicitações</th></tr></thead>
       <tbody>${linhas.map(r => `<tr><th scope="row">${esc(r.nome)}</th><td>${num(r.total)}</td></tr>`).join('')}</tbody>
       </table></div>`;
-    return `<details class="painel ouv-detalhes"><summary>Solicitações recebidas · ${num(total)} registros</summary>
-      <p>Cada linha com data de entrada e informação sobre a solicitação conta como um atendimento. A planilha registra esses atendimentos em abas próprias. Um mesmo atendimento pode ter gerado um boletim.</p>
+    return `<section class="painel" id="solicitacoes" aria-labelledby="titulo-solicitacoes"><h2 id="titulo-solicitacoes">Solicitações recebidas · ${num(total)} registros</h2>
+      <p>Cada linha com data de entrada e informação sobre a solicitação conta como um atendimento. Fonte: abas de solicitações da Ouvidoria.</p>
       ${[...anos].sort((a, b) => b.ano - a.ano).map(a => {
         const meses = Object.entries(a.meses).sort(([m], [n]) => Number(m) - Number(n))
           .map(([m, total]) => ({nome: mesesNomes[Number(m) - 1], total}));
@@ -133,18 +136,16 @@
           <details><summary>Por setor ou categoria de destino</summary>${tabela('Destino informado', lista(a.setores))}</details>
           <details><summary>Por tipo de solicitação</summary><p>Descrições livres sem correspondência no catálogo aparecem em “Outro tipo descrito”.</p>${tabela('Tipo', lista(a.tipos))}</details>
         </details>`;
-      }).join('')}</details>`;
+      }).join('')}</section>`;
   }
-  function montar(sec,base,solicitacoes) {
+  function montar(sec,base) {
     if(!sec) return;
     if(!base?.grupos) {sec.innerHTML='<p class="ouv-vazio">A base da ouvidoria não está disponível.</p>';return;}
     const options=(values,label)=>`<option value="todos">${label}</option>${values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}`;
     const todosTipos=[...new Set([...base.tipos,...base.grupos.map(g=>g.tipo)])];
     const todosStatus=[...new Set([...base.status,...base.grupos.map(g=>g.status)])];
     const anoPadrao=base.anos.filter(a=>/^\d{4}$/.test(a)).sort().at(-1)||'todos';
-    sec.innerHTML=`<div class="ouv-titulo"><div><h2>Ouvidoria</h2><p>Manifestações, conclusão e motivos por setor</p></div><span>Dados até ${base.fim?base.fim.split('-').reverse().join('/'):'data não informada'}</span></div>
-      ${mostrarSolicitacoes(solicitacoes)}
-      <h3>Boletins da Ouvidoria</h3>
+    sec.innerHTML=`<div class="ouv-titulo"><div><h2>Ocorrências da Ouvidoria</h2><p>${num(base.total)} boletins no histórico completo</p></div><span>Dados até ${base.fim?base.fim.split('-').reverse().join('/'):'data não informada'}</span></div>
       <div class="ouv-filtros"><label>Ano de abertura<select id="ouv-ano">${options(base.anos,'Todos os anos')}</select></label><label class="ouv-setor">Setor<select id="ouv-setor">${options(base.setores,'Todos os setores')}</select></label><label>Tipo<select id="ouv-tipo">${options(todosTipos,'Todos os tipos')}</select></label><label>Status<select id="ouv-status">${options(todosStatus,'Todos os status')}</select></label><button id="ouv-limpar" type="button">Limpar filtros</button></div>
       <p id="ouv-recorte" class="ouv-recorte" aria-live="polite"></p><label class="ouv-check"><input type="checkbox" id="ouv-ajustar">Encaixar os 12 meses na tela (visualização compacta)</label><div id="ouv-mensais"></div><div id="ouv-conteudo"></div>`;
     const selects=Object.fromEntries(['ano','setor','tipo','status'].map(k=>[k,sec.querySelector(`#ouv-${k}`)]));
@@ -173,7 +174,7 @@
         ${card('Não concluídos',num(s.naoConcluidos),'Demais status da planilha','warn')}
         ${card('Elogios',num(valor('Elogio')),`${percentual(valor('Elogio'),s.total)} do recorte`,'ok')}
         ${card('Queixas',num(valor('Queixa')),`${percentual(valor('Queixa'),s.total)} do recorte`,'bad')}
-        ${card('Solicitações',num(valor('Solicitação')),`${percentual(valor('Solicitação'),s.total)} do recorte`,'info')}
+        ${card('Boletins do tipo solicitação',num(valor('Solicitação')),`${percentual(valor('Solicitação'),s.total)} do recorte`,'info')}
       </div>${semMotivo||setorPendente||semSetor?`<p class="ouv-recorte">Campos a completar neste recorte: ${num(semMotivo)} registros sem motivo, ${num(semSetor)} sem setor e ${num(setorPendente)} com setor não padronizado.</p>`:''}<div class="grade ouv-grade">
       <section class="painel"><h2>Registros por setor</h2><p class="ouv-nota">Todos os setores com registros no recorte, em ordem de volume. Role para consultar a lista completa.</p><div class="ouv-legenda"><span style="--cor:#16a34a">Concluídos</span><span style="--cor:#d97706">Não concluídos</span></div><label class="ouv-check"><input type="checkbox" id="ouv-zeros" ${incluirZeros?'checked':''}>Incluir setores cadastrados sem registros no recorte</label><div class="ouv-scroll" tabindex="0" aria-label="Gráfico de barras horizontais de todos os setores">${barras(setoresVisiveis,s.total,true)}</div><p class="ouv-nota">${setoresVisiveis.length} setores exibidos · ${num(s.total)} registros no total</p></section>
       <section class="painel"><h2>Tipos de manifestação</h2>${distrib(s.tipos,n=>cores[n]||'#64748b')}<p class="ouv-nota">${outrosTipos?`${num(outrosTipos)} registros em outros tipos ou sem tipo informado.`:'Distribuição dos registros no recorte selecionado.'}</p><div class="ouv-status"><h3>Situação das manifestações</h3>${distrib(s.status,n=>n==='Concluído'?'#16a34a':n==='Em andamento'?'#d97706':'#64748b')}<p class="ouv-nota">Conclusão conforme o campo Status, independentemente da data de conclusão.</p></div></section>
@@ -189,5 +190,5 @@
     sec.querySelector('#ouv-limpar').addEventListener('click',()=>{Object.values(selects).forEach(el=>{el.value='todos';});atualizar();});
     atualizar();
   }
-  return {resumir,analise,montar,percentual,mensal,farol,quadrosMensais};
+  return {resumir,analise,montar,mostrarSolicitacoes,percentual,mensal,farol,quadrosMensais};
 });

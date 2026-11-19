@@ -94,7 +94,8 @@
   <button data-aba="watcher">🛏️ Watcher</button>
   <button data-aba="jci">📋 JCI + Comitês</button>
   <button data-aba="sip-cme">🏥 SIP — CME</button>
-  <button data-aba="ouvidoria">💬 Ouvidoria</button>
+  <button data-aba="ouvidoria">💬 Ocorrências da Ouvidoria</button>
+  <button data-aba="solicitacoes">📨 Solicitações da Ouvidoria</button>
   <button data-aba="pdsa">🧪 PDSA</button>
 </nav>
 
@@ -107,6 +108,7 @@
   <section id="aba-jci" class="aba"></section>
   <section id="aba-sip-cme" class="aba"></section>
   <section id="aba-ouvidoria" class="aba"></section>
+  <section id="aba-solicitacoes" class="aba"></section>
   <section id="aba-pdsa" class="aba"></section>
 </main>
 
@@ -159,6 +161,7 @@ document.getElementById('abas').addEventListener('click', e => {
   const btn = e.target.closest('button[data-aba]');
   if (!btn) return;
   const aba = btn.dataset.aba;
+  if (location.hash !== '#' + aba) history.replaceState(null, '', '#' + aba);
   document.querySelectorAll('#abas button').forEach(b => b.classList.toggle('ativa', b === btn));
   document.querySelectorAll('.aba').forEach(s => s.classList.toggle('ativa', s.id === 'aba-' + aba));
   if (!renderizado[aba] && RENDER[aba]) { RENDER[aba](); renderizado[aba] = true; }
@@ -167,7 +170,6 @@ document.getElementById('abas').addEventListener('click', e => {
 function irPara(aba){
   document.querySelector(`#abas button[data-aba="${aba}"]`).click();
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (history.replaceState) history.replaceState(null, '', '#' + aba);
 }
 
 /* ============================== 1. visão geral ============================== */
@@ -200,7 +202,8 @@ RENDER.visao = function(){
       <div class="atalho" onclick="irPara('huddle')"><div class="icone">📢</div><div class="nome">Huddle</div><div class="desc">Planos de ação e follow-up de problemas</div></div>
       <div class="atalho" onclick="irPara('watcher')"><div class="icone">🛏️</div><div class="nome">Watcher</div><div class="desc">Pacientes vigilados — dados anonimizados</div></div>
       <div class="atalho" onclick="irPara('sip-cme')"><div class="icone">🏥</div><div class="nome">SIP — CME</div><div class="desc">Auditorias de pass-through, acessos, articulados e pressões</div></div>
-      <div class="atalho" onclick="irPara('ouvidoria')"><div class="icone">💬</div><div class="nome">Ouvidoria</div><div class="desc">Elogios, queixas, solicitações, conclusão e motivos por setor</div></div>
+      <div class="atalho" onclick="irPara('ouvidoria')"><div class="icone">💬</div><div class="nome">Ocorrências da Ouvidoria</div><div class="desc">Boletins por tipo, setor e status</div></div>
+      <div class="atalho" onclick="irPara('solicitacoes')"><div class="icone">📨</div><div class="nome">Solicitações da Ouvidoria</div><div class="desc">Atendimentos por ano, canal e destino</div></div>
       <div class="atalho" onclick="irPara('jci')"><div class="icone">📋</div><div class="nome">JCI + Comitês</div><div class="desc">Conformidade por capítulo e planos de comitê</div></div>
     </div>
 
@@ -509,14 +512,19 @@ RENDER.jci = function(){
 <script>
 /* ============================== boot ============================== */
 document.getElementById('gerado').textContent = DADOS.gerado_em;
-RENDER.visao();
-renderizado.visao = true;
-
-/* abre a aba indicada no hash da URL (ex.: index.html#rounds) */
-const abaHash = (location.hash || '').replace('#', '');
-if (abaHash && document.querySelector(`#abas button[data-aba="${abaHash}"]`)) {
-  document.querySelector(`#abas button[data-aba="${abaHash}"]`).click();
+function abrirAbaDoLink() {
+  const aba = location.hash.slice(1);
+  const botao = Array.from(document.querySelectorAll('#abas button[data-aba]'))
+    .find(item => item.dataset.aba === aba);
+  if (!botao) return false;
+  botao.click();
+  return true;
 }
+if (!abrirAbaDoLink()) {
+  RENDER.visao();
+  renderizado.visao = true;
+}
+window.addEventListener('hashchange', abrirAbaDoLink);
 </script>
 </body>
 </html>
