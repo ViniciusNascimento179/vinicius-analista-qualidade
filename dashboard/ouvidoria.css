@@ -7,3 +7,31 @@
 .ouv-compacto .ouv-matriz{min-width:0;width:100%;font-size:9px}.ouv-compacto .ouv-resumo th:nth-child(1),.ouv-compacto .ouv-resumo th:nth-child(2){width:auto}.ouv-compacto .ouv-resumo thead th:nth-child(3){width:100px}.ouv-compacto .ouv-resumo thead th:last-child{width:45px}.ouv-compacto .ouv-matriz .ouv-farol{font-size:6px;white-space:normal}.ouv-compacto .ouv-top .ouv-col-setor{width:5%}.ouv-compacto .ouv-top .ouv-col-vol{width:1.5%}.ouv-compacto .ouv-top .ouv-col-pct{width:1.83%}.ouv-compacto .ouv-top th,.ouv-compacto .ouv-top td{font-size:8px;padding:4px 1px}.ouv-compacto .ouv-top td:not(.ouv-top-setor){font-size:7px}.ouv-compacto .ouv-top tfoot th,.ouv-compacto .ouv-top tfoot td{font-size:7px}
 @media(max-width:800px){.ouv-planilha .ouv-faixa{font-size:1.15rem;padding:20px 12px}.ouv-matriz-scroll{padding:12px 8px 8px}.ouv-regras{padding:0 10px 12px}.ouv-compacto .ouv-matriz{min-width:1000px}}
 @media print{.ouv-filtros{display:none}.ouv-scroll{max-height:none;overflow:visible}#aba-ouvidoria .ouv-grade{display:block}.ouv-grade>.painel{margin:14px 0}.ouv-barra{break-inside:avoid}.ouv-matriz-scroll{overflow:visible;padding:6px 0}.ouv-matriz{min-width:0;font-size:6px}.ouv-matriz .ouv-farol{font-size:5px;white-space:normal}.ouv-top .ouv-col-setor,.ouv-top .ouv-col-vol,.ouv-top .ouv-col-pct{width:auto}.ouv-top .ouv-top-setor,.ouv-top td,.ouv-top tfoot th,.ouv-top tfoot td{font-size:5px}.ouv-planilha{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+/* Leituras de comentários */
+#ouv-leituras { padding:0; overflow:hidden; border:1px solid #cbdcdf; border-radius:16px; background:white; }
+#ouv-leituras .leit-topo { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1.2rem; padding:clamp(1rem,3vw,2rem); background:linear-gradient(110deg,#143649,#145765); color:white; }
+#ouv-leituras .leit-topo h2 { margin:0; color:white; font-size:clamp(1.5rem,3vw,2.15rem); letter-spacing:-.035em; }
+#ouv-leituras .leit-topo p { margin:.35rem 0 0; color:#d4eced; }
+#ouv-leituras .leit-controles { display:flex; flex-wrap:wrap; gap:.65rem; }
+#ouv-leituras .leit-controles label { display:grid; gap:.25rem; font-size:.9rem; color:white; }
+#ouv-leituras select { font:inherit; color:#183c4d; padding:.45rem .6rem; border:1px solid #b5cccd; border-radius:6px; background:white; }
+#ouv-leituras .leit-corpo { padding:clamp(.85rem,2.5vw,1.8rem); }
+#ouv-leituras .leit-totais { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr)); gap:.75rem; }
+#ouv-leituras .leit-card { border:1px solid #d3e2e3; border-top:4px solid var(--tom); padding:.8rem 1rem; border-radius:9px; }
+#ouv-leituras .leit-card strong { display:block; font-size:1.85rem; line-height:1.2; color:#173a4b; font-variant-numeric:tabular-nums; }
+#ouv-leituras small { color:#4c6470; }
+#ouv-leituras figure { margin:1.5rem 0; }
+#ouv-leituras figcaption,#ouv-leituras summary { font-size:1.08rem; color:#183b4b; font-weight:650; }
+#ouv-leituras .leit-legenda { display:flex; gap:1.1rem; margin:.45rem 0 1rem; color:#405766; font-size:.9rem; }
+#ouv-leituras .leit-legenda span::before { content:""; display:inline-block; width:.72rem; height:.72rem; background:var(--tom); border-radius:2px; margin-right:.35rem; }
+#ouv-leituras .leit-mes { display:grid; grid-template-columns:3rem minmax(0,1fr); gap:.6rem; padding:.3rem 0; align-items:center; border-top:1px solid #edf2f3; }
+#ouv-leituras .leit-par { display:grid; gap:2px; }
+#ouv-leituras .leit-serie { display:grid; grid-template-columns:1fr 3.2rem; align-items:center; gap:.45rem; font-size:.85rem; text-align:right; color:#324b57; font-variant-numeric:tabular-nums; }
+#ouv-leituras .leit-trilho { height:.46rem; background:#f0f4f5; border-radius:4px; }
+#ouv-leituras .leit-barra { display:block; background:var(--tom); width:var(--largura); height:100%; border-radius:4px; }
+#ouv-leituras details { border-top:1px solid #d7e3e5; padding-top:.8rem; }
+#ouv-leituras summary { cursor:pointer; padding:.3rem 0; }
+#ouv-leituras .leit-scroll { overflow-x:auto; }
+#ouv-leituras table { min-width:31rem; width:100%; font-variant-numeric:tabular-nums; }
+#ouv-leituras table :is(td,th):not(:first-child) { text-align:right; }
