@@ -77,6 +77,16 @@
   .seletor-anos button.ativo { background: var(--brand); color: #fff; border-color: var(--brand); }
   .vazio { text-align: center; color: var(--muted); padding: 40px; }
   footer { color: var(--muted); font-size: .8rem; margin-top: 10px; }
+
+  .pilares-intro { margin: .45rem 0 1.3rem; color: #475569; }
+  .pilares-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 1rem; }
+  .pilar { border: 1px solid var(--line); border-top: .35rem solid var(--acento); border-radius: .75rem; padding: 1.2rem; background: var(--card); line-height: 1.5; }
+  .pilar h3 { color: var(--brand); line-height: 1.25; }
+  .pilar p, .pilar details { margin-top: .65rem; }
+  .pilar ul { padding-left: 1.3rem; margin-top: .6rem; }
+  .pilar summary { cursor: pointer; color: var(--brand); font-weight: 600; }
+  .pilar-links { display: flex; flex-wrap: wrap; gap: .4rem .85rem; margin-top: 1rem; }
+  .pilar-links a { color: #194c78; text-underline-offset: .2em; }
 </style>
 </head>
 <body>
@@ -88,6 +98,7 @@
 
 <nav class="abas" id="abas">
   <button data-aba="visao" class="ativa">🏠 Visão Geral</button>
+  <button data-aba="pilares">Pilares da Qualidade</button>
   <button data-aba="inspecoes">🔍 Inspeções</button>
   <button data-aba="rounds">🔄 Rounds</button>
   <button data-aba="huddle">📢 Huddle</button>
@@ -100,6 +111,62 @@
 
 <main>
   <section id="aba-visao" class="aba ativa"></section>
+
+  <section id="aba-pilares" class="aba" aria-labelledby="titulo-pilares">
+    <h2 id="titulo-pilares">Pilares da Qualidade</h2>
+    <p class="pilares-intro">Conheça as oito frentes de atuação da Qualidade no Hospital Vera Cruz. O asterisco (*) identifica as atividades de matriciamento.</p>
+    <div class="pilares-grade">
+      <article class="pilar" style="--acento:#afc856">
+        <h3>Mapeamento e gestão por processos</h3>
+        <p>Organiza os fluxos de trabalho e os acordos entre as áreas.</p>
+        <ul><li>Mapeamento de processos*</li><li>Cadeia de valor</li><li>Acordos e interações sistêmicas*</li><li>Gerenciamento da rotina</li></ul>
+        <div class="pilar-links"><a href="#sip-cme">SIP da CME</a> <a href="#pdsa">Ciclos PDSA</a></div>
+      </article>
+      <article class="pilar" style="--acento:#62cddf">
+        <h3>Gestão de documentos</h3>
+        <p>Acompanha o ciclo dos documentos institucionais, da publicação ao vencimento.</p>
+        <ul><li>Publicação de novos documentos*</li><li>Gestão da validade*</li></ul>
+        
+      </article>
+      <article class="pilar" style="--acento:#0f9cb3">
+        <h3>Certificações e acreditações</h3>
+        <p>Reúne as frentes de avaliação institucional e o acompanhamento das auditorias.</p>
+        <ul><li>ONA*</li><li>JCI</li><li>Anvisa</li><li>Unimed Seguros</li><li>Cirurgia bariátrica</li><li>Auditorias internas e externas</li></ul>
+        <div class="pilar-links"><a href="#jci">Avaliação JCI</a></div>
+      </article>
+      <article class="pilar" style="--acento:#e59b90">
+        <h3>Treinamento e desenvolvimento</h3>
+        <p>Articula a formação de gestores e as campanhas de educação e segurança.</p>
+        <ul><li>Treinamento de novos gestores em NPS, ferramentas da Qualidade, Interact e EPIMED*</li><li>Comitê de Educação e Cultura</li><li>Abril pela Segurança do Paciente*</li><li>Junho · O que importa para você?*</li><li>Setembro · Dia Mundial da Segurança do Paciente*</li><li>Simpósio 2027</li></ul>
+        
+      </article>
+      <article class="pilar" style="--acento:#345384">
+        <h3>Gestão de comissões e comitês</h3>
+        <p>Organiza as pautas, os registros e o acompanhamento das ações dos colegiados.</p>
+        <details><summary>Comissões obrigatórias (12)</summary><ul><li>Doação de Órgãos e Tecidos para Transplante (CIHDOTT)</li><li>Revisão de Prontuários</li><li>Óbitos</li><li>Gerenciamento de Risco</li><li>Controle de Infecção Hospitalar</li><li>Ética Médica</li><li>Ética de Enfermagem</li><li>Farmácia e Terapêutica</li><li>Materiais Perfurocortantes</li><li>Plano de Gerenciamento de Resíduos de Serviços de Saúde (PGRSS)</li><li>Processamento de Produtos para a Saúde</li><li>Proteção Radiológica</li></ul></details>
+        <details><summary>Comitês JCI (10)</summary><p>IPSG · COP/ACC · ASC · AOP/PCC · MMU · FMS · GLD/QPS/SQE · MOI/HCT · PCI · GHI</p></details>
+        <div class="pilar-links"><a href="#jci">Planos dos comitês JCI</a></div>
+      </article>
+      <article class="pilar" style="--acento:#f2ba6f">
+        <h3>Gerenciamento de risco e segurança do paciente</h3>
+        <p>Acompanha riscos, notificações e ações para a segurança do paciente.</p>
+        <ul><li>Classificação das notificações</li><li>Gestão de risco</li><li>Gestão dos planos de ação</li><li>Pesquisa de cultura de segurança</li></ul>
+        <div class="pilar-links"><a href="#inspecoes">Inspeções das instalações</a> <a href="#watcher">Paciente Watcher</a> <a href="#huddle">Safety Huddle</a></div>
+      </article>
+      <article class="pilar" style="--acento:#e9ad00">
+        <h3>Gestão de indicadores e resultados</h3>
+        <p>Reúne indicadores e resultados discutidos nos rounds e nas reuniões da Qualidade.</p>
+        <ul><li>ANAPH</li><li>QUALISS</li><li>Painel Assistencial</li><li>Pirâmide de Riscos*</li><li>GDH</li><li>Diretiva</li><li>Huddle*</li><li>Rounds</li></ul>
+        <div class="pilar-links"><a href="#rounds">Rounds da Liderança</a> <a href="#huddle">Safety Huddle</a> <a href="#visao">Visão geral</a></div>
+      </article>
+      <article class="pilar" style="--acento:#ec9827">
+        <h3>Experiência do paciente</h3>
+        <p>Reúne a escuta de pacientes e familiares pelos canais de avaliação e participação.</p>
+        <ul><li>NPS</li><li>Ouvidoria</li><li>Google Mídia</li><li>Quality24</li><li>Conselho do Paciente</li></ul>
+        <div class="pilar-links"><a href="#ouvidoria">Ocorrências da Ouvidoria</a></div>
+      </article>
+    </div>
+  </section>
   <section id="aba-inspecoes" class="aba"></section>
   <section id="aba-rounds" class="aba"></section>
   <section id="aba-huddle" class="aba"></section>
