@@ -170,7 +170,7 @@
     atualizarResumo();
   }
   function montarLeituras(sec) {
-    const dados = { 'QuestionPro': [[2025,"Abril",159,43,27,229],[2025,"Maio",135,71,24,230],[2025,"Junho",120,55,40,215],[2025,"Julho",60,25,46,131],[2025,"Agosto",37,15,61,113],[2025,"Setembro",78,45,15,138],[2025,"Outubro",107,39,10,156],[2025,"Novembro",120,38,20,178],[2025,"Dezembro",103,36,15,154],[2026,"Janeiro",86,36,null,122],[2026,"Fevereiro",109,24,null,133],[2026,"Março",131,34,null,165],[2026,"Abril",112,22,null,134],[2026,"Maio",100,16,null,116],[2026,"Junho",101,0,null,101],[2026,"Julho",103,1,null,104],[2026,"Agosto",93,0,null,93],[2026,"Setembro",97,0,null,97],[2026,"Outubro",98,0,null,98],[2026,"Novembro",71,null,null,71]], 'Google Negócios': [[2025,"Março",18,133,0,null],[2025,"Abril",8,89,1,null],[2025,"Maio",1,2,1,null],[2025,"Junho",6,66,0,null],[2025,"Julho",5,68,1,null],[2025,"Agosto",6,9,0,null],[2025,"Setembro",7,64,0,122],[2025,"Outubro",11,68,3,9144],[2025,"Novembro",11,81,1,7049],[2025,"Dezembro",5,63,0,7791],[2026,"Janeiro",8,68,0,9815],[2026,"Fevereiro",5,60,0,8959],[2026,"Março",17,26,0,11962],[2026,"Abril",11,68,0,9613],[2026,"Maio",11,38,0,10955],[2026,"Junho",5,37,0,7768],[2026,"Julho",14,24,null,9444],[2026,"Agosto",8,34,null,11466],[2026,"Setembro",6,48,null,10659],[2026,"Outubro",8,16,null,11306],[2026,"Novembro",12,17,null,9351]] };
+    const dados = { 'QuestionPro': [[2025,"Abril",159,43,229],[2025,"Maio",135,71,230],[2025,"Junho",120,55,215],[2025,"Julho",60,25,131],[2025,"Agosto",37,15,113],[2025,"Setembro",78,45,138],[2025,"Outubro",107,39,156],[2025,"Novembro",120,38,178],[2025,"Dezembro",103,36,154],[2026,"Janeiro",86,36,122],[2026,"Fevereiro",109,24,133],[2026,"Março",131,34,165],[2026,"Abril",112,22,134],[2026,"Maio",100,16,116],[2026,"Junho",101,0,101],[2026,"Julho",103,1,104],[2026,"Agosto",93,0,93],[2026,"Setembro",97,0,97],[2026,"Outubro",98,0,98],[2026,"Novembro",71,null,71]], 'Google Negócios': [[2025,"Março",18,133,null],[2025,"Abril",8,89,null],[2025,"Maio",1,2,null],[2025,"Junho",6,66,null],[2025,"Julho",5,68,null],[2025,"Agosto",6,9,null],[2025,"Setembro",7,64,122],[2025,"Outubro",11,68,9144],[2025,"Novembro",11,81,7049],[2025,"Dezembro",5,63,7791],[2026,"Janeiro",8,68,9815],[2026,"Fevereiro",5,60,8959],[2026,"Março",17,26,11962],[2026,"Abril",11,68,9613],[2026,"Maio",11,38,10955],[2026,"Junho",5,37,7768],[2026,"Julho",14,24,9444],[2026,"Agosto",8,34,11466],[2026,"Setembro",6,48,10659],[2026,"Outubro",8,16,11306],[2026,"Novembro",12,17,9351]] };
     const painel = sec.querySelector('#ouv-leituras');
     const positivo = '#167668', negativo = '#b56636';
     painel.innerHTML = `<div class="leit-topo"><div><h2>Leituras de comentários</h2><p data-periodo></p></div>
@@ -179,8 +179,8 @@
       <figure><figcaption>Comentários positivos e negativos por mês</figcaption>
       <div class="leit-legenda"><span style="--tom:${positivo}">Positivos</span><span style="--tom:${negativo}">Negativos</span></div>
       <div class="leit-grafico"></div></figure>
-      <details><summary>Consultar tabela mensal</summary><div class="leit-scroll"><table aria-label="Leituras mensais por canal"><thead><tr><th scope="col">Mês</th><th scope="col">Positivos</th><th scope="col">Negativos</th><th scope="col">Boletins abertos</th><th scope="col" data-total></th></tr></thead><tbody></tbody></table></div></details>
-      <p class="ouv-nota">O total da tabela segue a planilha de cada canal. Um traço indica campo em branco.</p></div>`;
+      <details><summary>Consultar tabela mensal</summary><div class="leit-scroll"><table aria-label="Leituras mensais por canal"><thead><tr><th scope="col">Mês</th><th scope="col">Positivos</th><th scope="col">Negativos</th><th scope="col" data-total></th></tr></thead><tbody></tbody></table></div></details>
+      <p class="ouv-nota">O total é o valor informado pelo canal e pode diferir da soma de positivos e negativos. Um traço indica campo em branco.</p></div>`;
     const canal = painel.querySelector('[data-canal]');
     const ano = painel.querySelector('[data-ano]');
     for (const nome of Object.keys(dados)) canal.add(new Option(nome, nome));
@@ -188,7 +188,7 @@
     function atualizarLeituras() {
       const meses = dados[canal.value].filter(r => r[0] === Number(ano.value));
       painel.querySelector('[data-periodo]').textContent = canal.value + ' · ' + meses[0][1] + ' a ' + meses.at(-1)[1].toLowerCase() + ' de ' + ano.value;
-      const campos = [['Positivos',3,positivo],['Negativos',2,negativo],['Boletins abertos',4,'#426489']];
+      const campos = [['Positivos',3,positivo],['Negativos',2,negativo]];
       painel.querySelector('.leit-totais').innerHTML = campos.map(([rotulo,coluna,cor]) => {
         const valores = meses.map(r => r[coluna]).filter(v => v != null);
         const soma = valores.reduce((a,b) => a+b,0);
@@ -197,7 +197,7 @@
       }).join('');
       const maximo = Math.max(1,...meses.flatMap(r => [r[2] ?? 0,r[3] ?? 0]));
       painel.querySelector('.leit-grafico').innerHTML = meses.map(r => {
-        const series = campos.slice(0,2).map(([rotulo,coluna,cor]) => {
+        const series = campos.map(([rotulo,coluna,cor]) => {
           const valor = r[coluna];
           const texto = valor == null ? '—' : num(valor);
           return `<div class="leit-serie" title="${rotulo}: ${texto}"><span class="leit-trilho" aria-hidden="true"><i class="leit-barra" style="--tom:${cor};--largura:${100*(valor ?? 0)/maximo}%"></i></span><span aria-label="${rotulo}: ${texto}">${texto}</span></div>`;
@@ -205,8 +205,8 @@
         return `<div class="leit-mes"><span title="${esc(r[1])}">${esc(r[1].slice(0,3))}</span><div class="leit-par">${series}</div></div>`;
       }).join('');
       painel.querySelector('[data-total]').textContent = canal.value === 'Google Negócios' ? 'Total de avaliações' : 'Total de comentários';
-      painel.querySelector('tbody').innerHTML = meses.slice().reverse().map(([,mes,neg,pos,bo,total]) =>
-        `<tr><th scope="row">${esc(mes)}</th>${[pos,neg,bo,total].map(n => '<td>' + (n == null ? '—' : num(n)) + '</td>').join('')}</tr>`
+      painel.querySelector('tbody').innerHTML = meses.slice().reverse().map(([,mes,neg,pos,total]) =>
+        `<tr><th scope="row">${esc(mes)}</th>${[pos,neg,total].map(n => '<td>' + (n == null ? '—' : num(n)) + '</td>').join('')}</tr>`
       ).join('');
     }
     canal.addEventListener('change', atualizarLeituras);
