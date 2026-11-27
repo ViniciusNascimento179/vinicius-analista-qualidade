@@ -90,7 +90,8 @@
   .pilar h4 { margin-top: 1rem; color: var(--brand); }
   .integracoes-mensais { margin-top: .7rem; font-variant-numeric: tabular-nums; }
   .integracoes-mensais :is(th, td) { padding: .35rem; position: static; }
-  .integracoes-mensais td { text-align: right; }
+  .integracoes-mensais :is(td, th:not(:first-child)) { text-align: right; }
+  #aba-integracoes .painel > p { margin-top: 1rem; color: #475569; }
   .integracoes-mensais tfoot { font-weight: bold; }
 </style>
 </head>
@@ -104,6 +105,7 @@
 <nav class="abas" id="abas">
   <button data-aba="visao" class="ativa">🏠 Visão Geral</button>
   <button data-aba="pilares">Pilares da Qualidade</button>
+  <button data-aba="integracoes">Integrações</button>
   <button data-aba="inspecoes">🔍 Inspeções</button>
   <button data-aba="rounds">🔄 Rounds</button>
   <button data-aba="huddle">📢 Huddle</button>
@@ -145,25 +147,7 @@
         <ul><li>Treinamento de novos gestores em NPS, ferramentas da Qualidade, Interact e EPIMED*</li><li>Comitê de Educação e Cultura</li><li>Abril pela Segurança do Paciente*</li><li>Junho · O que importa para você?*</li><li>Setembro · Dia Mundial da Segurança do Paciente*</li><li>Simpósio 2027</li></ul>
         <h4>Integração de novos colaboradores</h4>
         <p><strong>45 integrações</strong> · <strong>606 colaboradores treinados</strong><br>26/02 a 16/11/2026</p>
-        <details><summary>Ver números por mês</summary>
-          <table class="integracoes-mensais" aria-label="Integrações e colaboradores treinados por mês em 2026">
-            <thead><tr><th scope="col">Mês</th><th scope="col">Integrações</th><th scope="col">Colaboradores treinados</th></tr></thead>
-            <tbody>
-              <tr><th scope="row">Fevereiro</th><td>1</td><td>17</td></tr>
-              <tr><th scope="row">Março</th><td>7</td><td>71</td></tr>
-              <tr><th scope="row">Abril</th><td>6</td><td>57</td></tr>
-              <tr><th scope="row">Maio</th><td>6</td><td>63</td></tr>
-              <tr><th scope="row">Junho</th><td>5</td><td>65</td></tr>
-              <tr><th scope="row">Julho</th><td>6</td><td>113</td></tr>
-              <tr><th scope="row">Agosto</th><td>3</td><td>13</td></tr>
-              <tr><th scope="row">Setembro</th><td>4</td><td>67</td></tr>
-              <tr><th scope="row">Outubro</th><td>4</td><td>78</td></tr>
-              <tr><th scope="row">Novembro</th><td>3</td><td>62</td></tr>
-            </tbody>
-            <tfoot><tr><th scope="row">Total</th><td>45</td><td>606</td></tr></tfoot>
-          </table>
-          <p>Cada lançamento de integração conta como uma turma. O total de colaboradores corresponde à soma dos crachás retirados. Em 10/06 há dois lançamentos, com 4 e 18 crachás.</p>
-        </details>
+        <div class="pilar-links"><a href="#integracoes">Ver integrações por mês</a></div>
         
       </article>
       <article class="pilar" style="--acento:#345384">
@@ -191,6 +175,34 @@
         <ul><li>NPS</li><li>Ouvidoria</li><li>Google Mídia</li><li>Quality24</li><li>Conselho do Paciente</li></ul>
         <div class="pilar-links"><a href="#ouvidoria">Ocorrências da Ouvidoria</a></div>
       </article>
+    </div>
+  </section>
+  <section id="aba-integracoes" class="aba" aria-labelledby="titulo-integracoes">
+    <h2 id="titulo-integracoes">Integração de novos colaboradores</h2>
+    <p class="pilares-intro">Treinamento e Desenvolvimento · 26 de fevereiro a 16 de novembro de 2026</p>
+    <div class="kpis">
+      <div class="kpi"><div class="rotulo">Integrações realizadas</div><div class="valor">45</div></div>
+      <div class="kpi"><div class="rotulo">Colaboradores treinados</div><div class="valor">606</div></div>
+    </div>
+    <div class="painel">
+      <h3>Integrações por mês</h3>
+      <table class="integracoes-mensais" aria-label="Integrações e colaboradores treinados por mês em 2026">
+            <thead><tr><th scope="col">Mês</th><th scope="col">Integrações</th><th scope="col">Colaboradores treinados</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Fevereiro</th><td>1</td><td>17</td></tr>
+              <tr><th scope="row">Março</th><td>7</td><td>71</td></tr>
+              <tr><th scope="row">Abril</th><td>6</td><td>57</td></tr>
+              <tr><th scope="row">Maio</th><td>6</td><td>63</td></tr>
+              <tr><th scope="row">Junho</th><td>5</td><td>65</td></tr>
+              <tr><th scope="row">Julho</th><td>6</td><td>113</td></tr>
+              <tr><th scope="row">Agosto</th><td>3</td><td>13</td></tr>
+              <tr><th scope="row">Setembro</th><td>4</td><td>67</td></tr>
+              <tr><th scope="row">Outubro</th><td>4</td><td>78</td></tr>
+              <tr><th scope="row">Novembro</th><td>3</td><td>62</td></tr>
+            </tbody>
+            <tfoot><tr><th scope="row">Total</th><td>45</td><td>606</td></tr></tfoot>
+          </table>
+      <p>Cada lançamento de integração conta como uma turma. O total de colaboradores corresponde à soma dos crachás retirados. Em 10/06 há dois lançamentos, com 4 e 18 crachás.</p>
     </div>
   </section>
   <section id="aba-inspecoes" class="aba"></section>
