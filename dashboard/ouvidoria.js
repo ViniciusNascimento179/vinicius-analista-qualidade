@@ -169,6 +169,27 @@
     periodo.addEventListener('change', atualizarResumo);
     atualizarResumo();
   }
+  function montarLeituras(sec) {
+    const dados = { 'QuestionPro': [[2025,"Abril",159,43,27,229],[2025,"Maio",135,71,24,230],[2025,"Junho",120,55,40,215],[2025,"Julho",60,25,46,131],[2025,"Agosto",37,15,61,113],[2025,"Setembro",78,45,15,138],[2025,"Outubro",107,39,10,156],[2025,"Novembro",120,38,20,178],[2025,"Dezembro",103,36,15,154],[2026,"Janeiro",86,36,null,122],[2026,"Fevereiro",109,24,null,133],[2026,"Março",131,34,null,165],[2026,"Abril",112,22,null,134],[2026,"Maio",100,16,null,116],[2026,"Junho",101,0,null,101],[2026,"Julho",103,1,null,104],[2026,"Agosto",93,0,null,93],[2026,"Setembro",97,0,null,97],[2026,"Outubro",98,0,null,98],[2026,"Novembro",71,null,null,71]], 'Google Negócios': [[2025,"Março",18,133,0,null],[2025,"Abril",8,89,1,null],[2025,"Maio",1,2,1,null],[2025,"Junho",6,66,0,null],[2025,"Julho",5,68,1,null],[2025,"Agosto",6,9,0,null],[2025,"Setembro",7,64,0,122],[2025,"Outubro",11,68,3,9144],[2025,"Novembro",11,81,1,7049],[2025,"Dezembro",5,63,0,7791],[2026,"Janeiro",8,68,0,9815],[2026,"Fevereiro",5,60,0,8959],[2026,"Março",17,26,0,11962],[2026,"Abril",11,68,0,9613],[2026,"Maio",11,38,0,10955],[2026,"Junho",5,37,0,7768],[2026,"Julho",14,24,null,9444],[2026,"Agosto",8,34,null,11466],[2026,"Setembro",6,48,null,10659],[2026,"Outubro",8,16,null,11306],[2026,"Novembro",12,17,null,9351]] };
+    const painel = sec.querySelector('#ouv-leituras');
+    painel.innerHTML = `<div class="ouv-titulo"><h2>Leituras de comentários</h2></div>
+      <div class="ouv-filtros"><label>Canal<select data-canal></select></label><label>Ano das leituras<select data-ano></select></label></div>
+      <div style="overflow-x:auto"><table aria-label="Leituras mensais por canal"><thead><tr><th scope="col">Mês</th><th scope="col">Positivos</th><th scope="col">Negativos</th><th scope="col">Boletins abertos</th><th scope="col" data-total></th></tr></thead><tbody></tbody></table></div>
+      <p class="ouv-nota">O total segue o valor informado na planilha de cada canal. Um traço indica campo em branco.</p>`;
+    const canal = painel.querySelector('[data-canal]');
+    const ano = painel.querySelector('[data-ano]');
+    for (const nome of Object.keys(dados)) canal.add(new Option(nome, nome));
+    for (const valor of [...new Set(Object.values(dados).flat().map(r => r[0]))].sort((a,b) => b-a)) ano.add(new Option(valor, valor));
+    function atualizarLeituras() {
+      painel.querySelector('[data-total]').textContent = canal.value === 'Google Negócios' ? 'Total de avaliações' : 'Total de comentários';
+      painel.querySelector('tbody').innerHTML = dados[canal.value].filter(r => r[0] === Number(ano.value)).slice().reverse().map(([,mes,neg,pos,bo,total]) =>
+        `<tr><th scope="row">${esc(mes)}</th>${[pos,neg,bo,total].map(n => '<td>' + (n == null ? '—' : num(n)) + '</td>').join('')}</tr>`
+      ).join('');
+    }
+    canal.addEventListener('change', atualizarLeituras);
+    ano.addEventListener('change', atualizarLeituras);
+    atualizarLeituras();
+  }
   function montar(sec,base,solicitacoes) {
     if(!sec) return;
     if(!base?.grupos) {sec.innerHTML='<p class="ouv-vazio">A base da ouvidoria não está disponível.</p>';return;}
@@ -178,9 +199,11 @@
     const anoPadrao=base.anos.filter(a=>/^\d{4}$/.test(a)).sort().at(-1)||'todos';
     sec.innerHTML=`<div class="ouv-titulo"><div><h2>Ouvidoria</h2><p><a href="#solicitacoes">Ver atendimentos das planilhas de solicitações</a></p></div><span>Dados até ${base.fim?base.fim.split('-').reverse().join('/'):'data não informada'}</span></div>
       <section class="painel" id="ouv-resumo-geral" aria-label="Resumo geral da Ouvidoria"></section>
+      <section class="painel" id="ouv-leituras" aria-label="Leituras de comentários"></section>
       <h2>Detalhamento dos boletins</h2>
       <div class="ouv-filtros"><label>Ano de abertura<select id="ouv-ano">${options(base.anos,'Todos os anos')}</select></label><label class="ouv-setor">Setor<select id="ouv-setor">${options(base.setores,'Todos os setores')}</select></label><label>Tipo<select id="ouv-tipo">${options(todosTipos,'Todos os tipos')}</select></label><label>Status<select id="ouv-status">${options(todosStatus,'Todos os status')}</select></label><button id="ouv-limpar" type="button">Limpar filtros</button></div>
       <p id="ouv-recorte" class="ouv-recorte" aria-live="polite"></p><label class="ouv-check"><input type="checkbox" id="ouv-ajustar">Encaixar os 12 meses na tela (visualização compacta)</label><div id="ouv-mensais"></div><div id="ouv-conteudo"></div>`;
+    montarLeituras(sec);
     montarResumoGeral(sec, base, solicitacoes, options);
     const selects=Object.fromEntries(['ano','setor','tipo','status'].map(k=>[k,sec.querySelector(`#ouv-${k}`)]));
     selects.ano.value=anoPadrao;
