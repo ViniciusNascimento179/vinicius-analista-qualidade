@@ -93,10 +93,50 @@
   .integracoes-mensais :is(td, th:not(:first-child)) { text-align: right; }
   #aba-integracoes .painel > p { margin-top: 1rem; color: #475569; }
   .integracoes-mensais tfoot { font-weight: bold; }
-  .anahp-filtros { display:flex; flex-wrap:wrap; gap:1rem; }
-  .anahp-filtros label { display:grid; gap:.3rem; max-width:100%; color:var(--brand); font-weight:600; }
-  .anahp-filtros :is(select,input) { font:inherit; color:var(--ink); min-width:0; padding:.45rem; border:1px solid #94a3b8; border-radius:.35rem; background:white; }
-  #anahp-contagem { margin:1rem 0; }
+  #aba-anahp { --marinho:#173957; --verde:#087881; color:#183449; }
+  .anahp-capa { display:grid; grid-template-columns:1fr minmax(18rem, .72fr); align-items:center; gap:2rem; padding:clamp(1.4rem,4vw,3.3rem); background:linear-gradient(115deg,#102e4b 5%,#154c62 75%,#12656a); color:white; border-radius:1rem; }
+  .anahp-capa p { color:#c6e5e9; margin-bottom:.6rem; font-weight:600; }
+  #titulo-anahp { font-size:clamp(2rem,4vw,3.5rem); letter-spacing:-.045em; line-height:1.06; color:white; }
+  .anahp-capa figure { min-width:0; }
+  .anahp-capa figcaption { margin-bottom:.7rem; color:white; font-size:.9rem; font-weight:600; }
+  #anahp-serie { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:3px; }
+  #anahp-serie button { display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:5px; height:4.5rem; border:0; border-radius:4px; color:#daedf0; background:transparent; cursor:pointer; font:inherit; font-size:.75rem; }
+  #anahp-serie button::before { content:""; display:block; width:65%; height:var(--barra); background:#84c5cb; border-radius:3px 3px 0 0; }
+  #anahp-serie button[aria-pressed="true"] { color:white; font-weight:700; text-decoration:underline; text-underline-offset:3px; }
+  #anahp-serie button[aria-pressed="true"]::before, #anahp-serie button:hover::before { background:white; }
+  #aba-anahp :focus-visible { outline:3px solid #e5a735; outline-offset:2px; }
+  .anahp-consulta { margin-top:1rem; background:white; border:1px solid #cfdee6; border-radius:1rem; overflow:hidden; }
+  .anahp-filtros { display:grid; grid-template-columns:minmax(6rem,.55fr) minmax(8rem,.8fr) minmax(12rem,1.3fr) minmax(12rem,1.3fr); gap:1rem; padding:1.25rem clamp(1rem,3vw,2rem); border-bottom:1px solid #dbe5eb; background:#f8fbfc; }
+  .anahp-filtros label { display:grid; min-width:0; gap:.35rem; font-size:.875rem; color:var(--marinho); font-weight:600; }
+  .anahp-filtros :is(select,input) { width:100%; font:inherit; font-weight:400; font-size:1rem; color:#183449; padding:.6rem; border:1px solid #acbfc9; border-radius:.45rem; background:white; }
+  .anahp-periodo { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:.5rem; padding:1.4rem clamp(1rem,3vw,2rem) 1rem; }
+  .anahp-periodo h3 { color:var(--marinho); font-size:1.35rem; }
+  #anahp-contagem { color:#475f6d; font-size:.95rem; }
+  .anahp-tabela { max-height:62vh; overflow:auto; scrollbar-color:#a1b8c3 #f6f9fa; }
+  #aba-anahp table { width:100%; border-spacing:0; font-size:1rem; }
+  #aba-anahp th { color:#425a69; background:#edf4f6; z-index:1; }
+  #aba-anahp :is(td,th) { padding:.8rem 1rem; line-height:1.45; }
+  #aba-anahp td:first-child { color:#607680; font-variant-numeric:tabular-nums; }
+  #aba-anahp tbody tr:nth-child(even) { background:#f8fbfc; }
+  #aba-anahp td:last-child { color:#075e66; font-weight:700; font-variant-numeric:tabular-nums; }
+  #aba-anahp :is(td,th):last-child { text-align:right; }
+  @media(max-width:850px) {
+    .anahp-capa { grid-template-columns:1fr; gap:1.4rem; }
+    .anahp-filtros { grid-template-columns:1fr 1fr; }
+  }
+  @media(max-width:600px) {
+    .anahp-capa { padding:1.15rem; }
+    .anahp-filtros { gap:.65rem; }
+    .anahp-filtros label:nth-child(n+3) { grid-column:1/-1; }
+    .anahp-tabela { max-height:none; overflow:visible; }
+    #aba-anahp thead { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+    #aba-anahp tbody tr { display:grid; grid-template-columns:1fr auto; gap:.3rem .7rem; padding:1rem; border-top:1px solid #dbe5eb; }
+    #aba-anahp tbody td { border:0; padding:0; }
+    #aba-anahp td:first-child::before { content:"Item "; }
+    #aba-anahp td:nth-child(2) { grid-column:1/-1; grid-row:2; font-weight:600; }
+    #aba-anahp td:nth-child(3) { grid-column:1/-1; font-size:.9rem; color:#475f6d; }
+    #aba-anahp td:last-child { grid-row:1; grid-column:2; overflow-wrap:anywhere; }
+  }
 </style>
 </head>
 <body>
@@ -182,18 +222,20 @@
     </div>
   </section>
   <section id="aba-anahp" class="aba" aria-labelledby="titulo-anahp">
-    <h2 id="titulo-anahp">Variáveis ANAHP</h2>
-    <p class="pilares-intro">Gestão de Indicadores e Resultados · Dados mensais do Hospital Vera Cruz</p>
-    <div class="painel">
+    <div class="anahp-capa">
+      <div><p>Gestão de Indicadores e Resultados</p><h2 id="titulo-anahp">Variáveis ANAHP</h2></div>
+      <figure><figcaption id="anahp-legenda"></figcaption><div id="anahp-serie" role="group" aria-labelledby="anahp-legenda"></div></figure>
+    </div>
+    <div class="anahp-consulta">
       <div class="anahp-filtros">
         <label>Ano<select id="anahp-ano"></select></label>
         <label>Mês<select id="anahp-mes"></select></label>
         <label>Área<select id="anahp-area"></select></label>
         <label>Buscar variável<input id="anahp-busca" type="search" placeholder="Nome ou número do item"></label>
       </div>
-      <p id="anahp-contagem" role="status"></p>
-      <div style="overflow-x:auto"><table aria-label="Valores mensais das variáveis ANAHP">
-        <thead><tr><th scope="col">Item</th><th scope="col">Variável</th><th scope="col">Área</th><th scope="col">Mês</th><th scope="col">Valor registrado</th></tr></thead>
+      <div class="anahp-periodo"><h3 id="anahp-periodo-titulo"></h3><p id="anahp-contagem" role="status"></p></div>
+      <div class="anahp-tabela" tabindex="0" role="region" aria-labelledby="anahp-periodo-titulo"><table aria-label="Valores mensais das variáveis ANAHP">
+        <thead><tr><th scope="col">Item</th><th scope="col">Variável</th><th scope="col">Área</th><th scope="col">Valor registrado</th></tr></thead>
         <tbody id="anahp-registros"></tbody>
       </table></div>
     </div>
@@ -651,17 +693,38 @@ RENDER.anahp = function () {
       const valor = item.valores[mes.value];
       if (valor === undefined) continue;
       const linha = document.createElement('tr');
-      for (const campo of [item.item, item.nome, item.area, meses[Number(mes.value)-1], valor]) {
+      for (const campo of [item.item, item.nome, item.area, valor]) {
         linha.insertCell().textContent = campo;
       }
       linhas.append(linha);
       n++;
+    }
+    document.getElementById('anahp-periodo-titulo').textContent = meses[Number(mes.value)-1] + ' de ' + ano.value;
+    for (const botao of document.querySelectorAll('#anahp-serie button')) {
+      botao.setAttribute('aria-pressed', String(botao.dataset.mes === mes.value));
     }
     corpo.replaceChildren(linhas);
     status.textContent = n ? n.toLocaleString('pt-BR') + (n === 1 ? ' registro preenchido' : ' registros preenchidos') : 'Nenhum registro para os filtros selecionados.';
   }
   function carregarAno() {
     const itens = ANAHP[ano.value];
+    const totais = meses.map((_, indice) => itens.filter(item => String(indice + 1) in item.valores).length);
+    const serie = document.getElementById('anahp-serie');
+    serie.replaceChildren();
+    document.getElementById('anahp-legenda').textContent = 'Registros preenchidos por mês · ' + ano.value;
+    totais.forEach((total, indice) => {
+      if (!total) return;
+      const botao = document.createElement('button');
+      const chave = String(indice + 1);
+      botao.type = 'button';
+      botao.dataset.mes = chave;
+      botao.textContent = meses[indice].slice(0, 3);
+      botao.title = meses[indice] + ' · ' + total + ' registros';
+      botao.setAttribute('aria-label', botao.title);
+      botao.style.setProperty('--barra', (total / Math.max(...totais) * 70) + '%');
+      botao.addEventListener('click', () => { mes.value = chave; listar(); });
+      serie.append(botao);
+    });
     const anterior = mes.value;
     mes.replaceChildren();
     meses.forEach((nome, indice) => {
