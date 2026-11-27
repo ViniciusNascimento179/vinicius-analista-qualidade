@@ -93,6 +93,10 @@
   .integracoes-mensais :is(td, th:not(:first-child)) { text-align: right; }
   #aba-integracoes .painel > p { margin-top: 1rem; color: #475569; }
   .integracoes-mensais tfoot { font-weight: bold; }
+  .anahp-filtros { display:flex; flex-wrap:wrap; gap:1rem; }
+  .anahp-filtros label { display:grid; gap:.3rem; max-width:100%; color:var(--brand); font-weight:600; }
+  .anahp-filtros :is(select,input) { font:inherit; color:var(--ink); min-width:0; padding:.45rem; border:1px solid #94a3b8; border-radius:.35rem; background:white; }
+  #anahp-contagem { margin:1rem 0; }
 </style>
 </head>
 <body>
@@ -105,6 +109,7 @@
 <nav class="abas" id="abas">
   <button data-aba="visao" class="ativa">🏠 Visão Geral</button>
   <button data-aba="pilares">Pilares da Qualidade</button>
+  <button data-aba="anahp">ANAHP</button>
   <button data-aba="integracoes">Integrações</button>
   <button data-aba="inspecoes">🔍 Inspeções</button>
   <button data-aba="rounds">🔄 Rounds</button>
@@ -165,7 +170,7 @@
       <article class="pilar" style="--acento:#e9ad00">
         <h3>Gestão de indicadores e resultados</h3>
         <p>Reúne indicadores e resultados discutidos nos rounds e nas reuniões da Qualidade.</p>
-        <ul><li>ANAPH</li><li>QUALISS</li><li>Painel Assistencial</li><li>Pirâmide de Riscos*</li><li>GDH</li><li>Diretiva</li><li>Huddle*</li><li>Rounds</li></ul>
+        <ul><li><a href="#anahp">ANAHP</a></li><li>QUALISS</li><li>Painel Assistencial</li><li>Pirâmide de Riscos*</li><li>GDH</li><li>Diretiva</li><li>Huddle*</li><li>Rounds</li></ul>
         <div class="pilar-links"><a href="#rounds">Rounds da Liderança</a> <a href="#huddle">Safety Huddle</a> <a href="#visao">Visão geral</a></div>
       </article>
       <article class="pilar" style="--acento:#ec9827">
@@ -174,6 +179,23 @@
         <ul><li>NPS</li><li>Ouvidoria</li><li>Google Mídia</li><li>Quality24</li><li>Conselho do Paciente</li></ul>
         <div class="pilar-links"><a href="#ouvidoria">Ocorrências da Ouvidoria</a></div>
       </article>
+    </div>
+  </section>
+  <section id="aba-anahp" class="aba" aria-labelledby="titulo-anahp">
+    <h2 id="titulo-anahp">Variáveis ANAHP</h2>
+    <p class="pilares-intro">Gestão de Indicadores e Resultados · Dados mensais do Hospital Vera Cruz</p>
+    <div class="painel">
+      <div class="anahp-filtros">
+        <label>Ano<select id="anahp-ano"></select></label>
+        <label>Mês<select id="anahp-mes"></select></label>
+        <label>Área<select id="anahp-area"></select></label>
+        <label>Buscar variável<input id="anahp-busca" type="search" placeholder="Nome ou número do item"></label>
+      </div>
+      <p id="anahp-contagem" role="status"></p>
+      <div style="overflow-x:auto"><table aria-label="Valores mensais das variáveis ANAHP">
+        <thead><tr><th scope="col">Item</th><th scope="col">Variável</th><th scope="col">Área</th><th scope="col">Mês</th><th scope="col">Valor registrado</th></tr></thead>
+        <tbody id="anahp-registros"></tbody>
+      </table></div>
     </div>
   </section>
   <section id="aba-integracoes" class="aba" aria-labelledby="titulo-integracoes">
@@ -608,6 +630,57 @@ RENDER.jci = function(){
 <script src="jci-dados.js?v=c83e964c03cf33a4"></script>
 <script src="jci-core.js?v=05c7892eab481df0"></script>
 <script src="jci.js?v=9a06bb7934e577bc"></script>
+<script src="anahp-2025-2026.js?v=1"></script>
+<script>
+RENDER.anahp = function () {
+  const ano = document.getElementById('anahp-ano');
+  const mes = document.getElementById('anahp-mes');
+  const area = document.getElementById('anahp-area');
+  const busca = document.getElementById('anahp-busca');
+  const corpo = document.getElementById('anahp-registros');
+  const status = document.getElementById('anahp-contagem');
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const normalizar = texto => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  function listar() {
+    const linhas = document.createDocumentFragment();
+    const termo = normalizar(busca.value);
+    let n = 0;
+    for (const item of ANAHP[ano.value]) {
+      if (area.value && area.value !== item.area) continue;
+      if (termo && String(item.item) !== termo && !normalizar(item.nome).includes(termo)) continue;
+      const valor = item.valores[mes.value];
+      if (valor === undefined) continue;
+      const linha = document.createElement('tr');
+      for (const campo of [item.item, item.nome, item.area, meses[Number(mes.value)-1], valor]) {
+        linha.insertCell().textContent = campo;
+      }
+      linhas.append(linha);
+      n++;
+    }
+    corpo.replaceChildren(linhas);
+    status.textContent = n ? n.toLocaleString('pt-BR') + (n === 1 ? ' registro preenchido' : ' registros preenchidos') : 'Nenhum registro para os filtros selecionados.';
+  }
+  function carregarAno() {
+    const itens = ANAHP[ano.value];
+    const anterior = mes.value;
+    mes.replaceChildren();
+    meses.forEach((nome, indice) => {
+      const chave = String(indice + 1);
+      if (itens.some(item => chave in item.valores)) mes.add(new Option(nome, chave));
+    });
+    if ([...mes.options].some(op => op.value === anterior)) mes.value = anterior;
+    area.replaceChildren(new Option('Todas as áreas', ''));
+    for (const nome of [...new Set(itens.map(item => item.area))].sort((a,b) => a.localeCompare(b,'pt-BR'))) area.add(new Option(nome, nome));
+    listar();
+  }
+  for (const chave of Object.keys(ANAHP).sort().reverse()) ano.add(new Option(chave, chave));
+  ano.addEventListener('change', carregarAno);
+  mes.addEventListener('change', listar);
+  area.addEventListener('change', listar);
+  busca.addEventListener('input', listar);
+  carregarAno();
+};
+</script>
 <script>
 /* ============================== boot ============================== */
 document.getElementById('gerado').textContent = DADOS.gerado_em;
