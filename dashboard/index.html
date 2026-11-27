@@ -137,6 +137,15 @@
     #aba-anahp td:nth-child(3) { grid-column:1/-1; font-size:.9rem; color:#475f6d; }
     #aba-anahp td:last-child { grid-row:1; grid-column:2; overflow-wrap:anywhere; }
   }
+  .anahp-areas { margin:0; padding:1.4rem clamp(1rem,3vw,2rem); border-bottom:1px solid #dbe5eb; }
+  .anahp-areas figcaption { font-size:1.2rem; font-weight:700; color:var(--marinho); }
+  #anahp-areas-periodo { color:#475f6d; margin:.3rem 0 1rem; }
+  .anahp-areas ol { list-style:none; max-height:28rem; overflow:auto; padding-right:.5rem; scrollbar-color:#a1b8c3 #f6f9fa; }
+  .anahp-areas li { display:grid; grid-template-columns:minmax(10rem,28%) minmax(2rem,1fr) 3ch; gap:.8rem; align-items:center; padding:.42rem 0; border-bottom:1px solid #edf3f5; line-height:1.25; }
+  .anahp-areas .trilho { background:#edf4f5; border-radius:.25rem; height:.7rem; overflow:hidden; }
+  .anahp-areas .barra { display:block; height:100%; background:#087881; border-radius:inherit; }
+  .anahp-areas strong { text-align:right; font-variant-numeric:tabular-nums; }
+  @media(max-width:600px) { .anahp-areas li { grid-template-columns:minmax(0,47%) minmax(1rem,1fr) 3ch; gap:.4rem; font-size:.9rem; } }
 </style>
 </head>
 <body>
@@ -233,6 +242,11 @@
         <label>Área<select id="anahp-area"></select></label>
         <label>Buscar variável<input id="anahp-busca" type="search" placeholder="Nome ou número do item"></label>
       </div>
+      <figure class="anahp-areas">
+        <figcaption id="anahp-areas-titulo">Variáveis preenchidas por área</figcaption>
+        <p id="anahp-areas-periodo"></p>
+        <ol id="anahp-areas-lista" tabindex="0" aria-labelledby="anahp-areas-titulo" aria-describedby="anahp-areas-periodo"></ol>
+      </figure>
       <div class="anahp-periodo"><h3 id="anahp-periodo-titulo"></h3><p id="anahp-contagem" role="status"></p></div>
       <div class="anahp-tabela" tabindex="0" role="region" aria-labelledby="anahp-periodo-titulo"><table aria-label="Valores mensais das variáveis ANAHP">
         <thead><tr><th scope="col">Item</th><th scope="col">Variável</th><th scope="col">Área</th><th scope="col">Valor registrado</th></tr></thead>
@@ -683,6 +697,40 @@ RENDER.anahp = function () {
   const status = document.getElementById('anahp-contagem');
   const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const normalizar = texto => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  function atualizarGraficoAreas() {
+    const contagens = new Map();
+    for (const item of ANAHP[ano.value]) {
+      const preenchido = Object.hasOwn(item.valores, mes.value);
+      contagens.set(item.area, (contagens.get(item.area) || 0) + Number(preenchido));
+    }
+    const ranking = [...contagens].sort(([a, x], [b, y]) => y - x || a.localeCompare(b, 'pt-BR'));
+    const maior = ranking[0]?.[1] || 1;
+    const linhas = document.createDocumentFragment();
+    for (const [nome, total] of ranking) {
+      const linha = document.createElement('li');
+      const rotulo = document.createElement('span');
+      rotulo.textContent = nome;
+      const trilho = document.createElement('span');
+      trilho.className = 'trilho';
+      trilho.setAttribute('aria-hidden', 'true');
+      const barra = document.createElement('span');
+      barra.className = 'barra';
+      barra.style.width = (100 * total / maior) + '%';
+      trilho.append(barra);
+      const valor = document.createElement('strong');
+      valor.textContent = total;
+      linha.append(rotulo, trilho, valor);
+      linhas.append(linha);
+    }
+    const lista = document.getElementById('anahp-areas-lista');
+    lista.replaceChildren(linhas);
+    lista.scrollTop = 0;
+    document.getElementById('anahp-areas-periodo').textContent = meses[Number(mes.value) - 1] + ' de ' + ano.value + ' · Todas as ' + ranking.length + ' áreas do ano';
+  }
+  function atualizarPeriodo() {
+    atualizarGraficoAreas();
+    listar();
+  }
   function listar() {
     const linhas = document.createDocumentFragment();
     const termo = normalizar(busca.value);
@@ -722,7 +770,7 @@ RENDER.anahp = function () {
       botao.title = meses[indice] + ' · ' + total + ' registros';
       botao.setAttribute('aria-label', botao.title);
       botao.style.setProperty('--barra', (total / Math.max(...totais) * 70) + '%');
-      botao.addEventListener('click', () => { mes.value = chave; listar(); });
+      botao.addEventListener('click', () => { mes.value = chave; atualizarPeriodo(); });
       serie.append(botao);
     });
     const anterior = mes.value;
@@ -734,11 +782,11 @@ RENDER.anahp = function () {
     if ([...mes.options].some(op => op.value === anterior)) mes.value = anterior;
     area.replaceChildren(new Option('Todas as áreas', ''));
     for (const nome of [...new Set(itens.map(item => item.area))].sort((a,b) => a.localeCompare(b,'pt-BR'))) area.add(new Option(nome, nome));
-    listar();
+    atualizarPeriodo();
   }
   for (const chave of Object.keys(ANAHP).sort().reverse()) ano.add(new Option(chave, chave));
   ano.addEventListener('change', carregarAno);
-  mes.addEventListener('change', listar);
+  mes.addEventListener('change', atualizarPeriodo);
   area.addEventListener('change', listar);
   busca.addEventListener('input', listar);
   carregarAno();
